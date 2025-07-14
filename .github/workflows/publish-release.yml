@@ -69,8 +69,8 @@ jobs:
           push: true
           tags: |
             oni1003/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}
-          cache-from: type=registry,ref=oni1003/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}
-          cache-to: type=inline
+          # cache-from: type=registry,ref=oni1003/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}
+          # cache-to: type=inline
 
     outputs:
       services: ${{ steps.get-services.outputs.services }}
@@ -110,8 +110,8 @@ jobs:
           context: .
           tags: |
             oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}
-          cache-from: type=registry,ref=oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version}}
-          cache-to: type=inline
+          # cache-from: type=registry,ref=oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version}}
+          # cache-to: type=inline
 
   security-scans:
     needs: [base, build]
