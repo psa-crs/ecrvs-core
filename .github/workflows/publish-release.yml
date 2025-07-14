@@ -5,7 +5,7 @@
 # OpenCRVS is also distributed under the terms of the Civil Registration
 # & Healthcare Disclaimer located at http://opencrvs.org/license.
 #
-# Copyright (C) The OpenCRVS Authors located at https://github.com/opencrvs/opencrvs-core/blob/master/AUTHORS.
+# Copyright (C) The OpenCRVS Authors located at https://github.com/oni1003/opencrvs-core/blob/master/AUTHORS.
 name: Publish release
 
 on:
@@ -25,7 +25,7 @@ jobs:
       - uses: trstringer/manual-approval@v1
         with:
           secret: ${{ github.TOKEN }}
-          approvers: euanmillar,rikukissa
+          approvers: oni-on1003
           minimum-approvals: 1
           issue-title: 'Release: ${{ github.event.inputs.release_version }}'
           issue-body: 'Please approve or deny the publishing of release: ${{ github.event.inputs.release_version }} to Dockerhub'
@@ -68,8 +68,8 @@ jobs:
           context: .
           push: true
           tags: |
-            opencrvs/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}
-          cache-from: type=registry,ref=opencrvs/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}
+            oni1003/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}
+          cache-from: type=registry,ref=oni1003/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}
           cache-to: type=inline
 
     outputs:
@@ -109,8 +109,8 @@ jobs:
           push: true
           context: .
           tags: |
-            opencrvs/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}
-          cache-from: type=registry,ref=opencrvs/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version}}
+            oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}
+          cache-from: type=registry,ref=oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version}}
           cache-to: type=inline
 
   security-scans:
@@ -131,5 +131,5 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'opencrvs/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}'
+          image-ref: 'oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}'
           trivy-config: trivy.yaml
