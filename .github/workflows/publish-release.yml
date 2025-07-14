@@ -30,10 +30,10 @@ jobs:
       #     issue-title: 'Release: ${{ github.event.inputs.release_version }}'
       #     issue-body: 'Please approve or deny the publishing of release: ${{ github.event.inputs.release_version }} to Dockerhub'
       #     exclude-workflow-initiator-as-approver: false
-      # - uses: actions/checkout@v4
-      #   if: github.event_name == 'workflow_dispatch'
-      #   with:
-      #     ref: '${{ github.event.inputs.release_version }}'
+      - uses: actions/checkout@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          ref: '${{ github.event.inputs.release_version }}'
 
       - uses: actions/checkout@v4
         if: github.event_name == 'push'
