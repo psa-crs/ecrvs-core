@@ -22,18 +22,18 @@ jobs:
   base:
     runs-on: ubuntu-22.04
     steps:
-      - uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: oni-on1003
-          minimum-approvals: 1
-          issue-title: 'Release: ${{ github.event.inputs.release_version }}'
-          issue-body: 'Please approve or deny the publishing of release: ${{ github.event.inputs.release_version }} to Dockerhub'
-          exclude-workflow-initiator-as-approver: false
-      - uses: actions/checkout@v4
-        if: github.event_name == 'workflow_dispatch'
-        with:
-          ref: '${{ github.event.inputs.release_version }}'
+      # - uses: trstringer/manual-approval@v1
+      #   with:
+      #     secret: ${{ github.TOKEN }}
+      #     approvers: oni-on1003
+      #     minimum-approvals: 1
+      #     issue-title: 'Release: ${{ github.event.inputs.release_version }}'
+      #     issue-body: 'Please approve or deny the publishing of release: ${{ github.event.inputs.release_version }} to Dockerhub'
+      #     exclude-workflow-initiator-as-approver: false
+      # - uses: actions/checkout@v4
+      #   if: github.event_name == 'workflow_dispatch'
+      #   with:
+      #     ref: '${{ github.event.inputs.release_version }}'
 
       - uses: actions/checkout@v4
         if: github.event_name == 'push'
