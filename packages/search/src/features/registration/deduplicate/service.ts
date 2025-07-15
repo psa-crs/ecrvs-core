@@ -76,7 +76,7 @@ export const searchForBirthDuplicates = async (
   if (
     (!body.childFirstNames && !body.childFamilyName) ||
     (!body.motherFirstNames && !body.motherFamilyName) ||
-    !body.motherDoB ||
+    // !body.motherDoB ||
     !body.childDoB
   ) {
     return []
@@ -107,23 +107,23 @@ export const searchForBirthDuplicates = async (
               minimum_should_match: '100%'
             }
           }
-        },
-        body.motherDoB && {
-          range: {
-            motherDoB: {
-              gte: subYears(new Date(body.motherDoB), 1).toISOString(),
-              lte: addYears(new Date(body.motherDoB), 1).toISOString()
-            }
-          }
-        },
-        body.motherDoB && {
-          distance_feature: {
-            field: 'motherDoB',
-            pivot: '365d',
-            origin: new Date(body.motherDoB).toISOString(),
-            boost: 1.5
-          }
         }
+        // body.motherDoB && {
+        //   range: {
+        //     motherDoB: {
+        //       gte: subYears(new Date(body.motherDoB), 1).toISOString(),
+        //       lte: addYears(new Date(body.motherDoB), 1).toISOString()
+        //     }
+        //   }
+        // },
+        // body.motherDoB && {
+        //   distance_feature: {
+        //     field: 'motherDoB',
+        //     pivot: '365d',
+        //     origin: new Date(body.motherDoB).toISOString(),
+        //     boost: 1.5
+        //   }
+        // }
       ].filter(isNonEmptyCondition)
     }
   }
