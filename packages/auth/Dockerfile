@@ -1,5 +1,5 @@
 ARG  BRANCH=develop
-FROM opencrvs/ocrvs-base:${BRANCH}
+FROM oni1003/ocrvs-base:${BRANCH}
 
 USER node
 
