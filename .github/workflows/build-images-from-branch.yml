@@ -132,8 +132,8 @@ jobs:
           tags: |
             oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}
             oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.branch }}
-          # cache-from: type=registry,ref=oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.branch }}
-          # cache-to: type=inline
+          cache-from: type=registry,ref=oni1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.branch }}
+          cache-to: type=inline
 
   security-scans-pr:
     needs: [build, base]
