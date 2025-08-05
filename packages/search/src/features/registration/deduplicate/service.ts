@@ -228,22 +228,12 @@ export const searchForBirthDuplicates = async (
         index: OPENCRVS_INDEX_NAME,
         query: {
           bool: {
-            should: [
-              {
-                bool: {
-                  must: [mothersDetailsMatch, birthWithin9Months]
-                }
-              },
-              {
-                bool: {
-                  must: [
-                    childsNameMatch,
-                    childsBirthWithinRange,
-                    mothersDetailsMatch
-                  ].filter(isNonEmptyCondition)
-                }
-              }
-            ]
+            must: [
+              childsNameMatch,
+              childsBirthWithinRange,
+              mothersDetailsMatch,
+              birthWithin9Months
+            ].filter(isNonEmptyCondition)
           }
         }
       },
