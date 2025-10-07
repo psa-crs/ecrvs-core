@@ -36,7 +36,7 @@ jobs:
         run: |
           PACKAGE_VERSION=$(node -p "require('../../package.json').version")
           TOOLKIT_VERSION=$PACKAGE_VERSION-rc.$(git rev-parse --short=7 HEAD)
-          if npm view @opencrvs/toolkit@$TOOLKIT_VERSION > /dev/null 2>&1; then
+          if npm view @ecrvs/opencrvs-toolkit@$TOOLKIT_VERSION > /dev/null 2>&1; then
           echo "Version $TOOLKIT_VERSION already exists on npm."
           echo "version-exists=true" >> $GITHUB_OUTPUT
             else
