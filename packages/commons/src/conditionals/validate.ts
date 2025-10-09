@@ -122,8 +122,10 @@ ajv.addKeyword({
   schemaType: 'object',
   errors: true,
   $data: true,
-  validate(schema: any, data: Record<string, number>) {
+  validate(schema: any, data: any) {
     const { sum, field1, field2 } = schema
+
+    console.log(schema, data)
 
     const getRefPath = (ref: any) =>
       typeof ref === 'object' && '$data' in ref ? ref.$data : ref
@@ -132,9 +134,9 @@ ajv.addKeyword({
     const field1Key = getRefPath(field1)
     const field2Key = getRefPath(field2)
 
-    const total = data[sumKey]
-    const num1 = data[field1Key]
-    const num2 = data[field2Key]
+    const total = data?.$form?.[sumKey]
+    const num1 = data?.$form?.[field1Key]
+    const num2 = data?.$form?.[field2Key]
 
     console.log(total, num1, num2)
 
