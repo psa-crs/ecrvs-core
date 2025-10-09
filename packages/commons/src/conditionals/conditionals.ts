@@ -437,6 +437,38 @@ export function createFieldConditionals(fieldId: string) {
         ]
       })
     },
+    isGreaterThanOrEqualTo(value: number | string | FieldReference) {
+      const fieldSchema: Record<string, any> = { type: 'number' }
+      const properties: Record<string, any> = {}
+      const required: string[] = [fieldId]
+
+      // If comparing against a fixed number
+      if (typeof value === 'number') {
+        fieldSchema.minimum = value
+      } else {
+        // Otherwise, comparing to another field (e.g., >= another field)
+        let refField = ''
+
+        if (isFieldReference(value)) {
+          // If the value is a field reference object
+          refField = value.$$field
+        } else {
+          // If it’s just a string name of another field
+          refField = value
+        }
+        fieldSchema.minimum = { $data: `/$form/${refField}` }
+        properties[refField] = { type: 'number' }
+        required.push(refField)
+      }
+
+      properties[fieldId] = fieldSchema
+
+      return defineFormConditional({
+        type: 'object',
+        properties,
+        required
+      })
+    },
     /**
      * Use case: Some fields are rendered when selection is not made, or boolean false is explicitly selected.
      * @example field('recommender.none').isFalsy() vs not(field('recommender.none').isEqualTo(true))
