@@ -116,6 +116,27 @@ ajv.addKeyword({
   }
 })
 
+ajv.addKeyword({
+  keyword: 'sumOf',
+  type: 'object',
+  schemaType: 'array',
+  errors: true,
+  $data: true,
+  validate(schema: number[]) {
+    if (!Array.isArray(schema) || schema.length !== 3) {
+      return true
+    }
+
+    const [a, b, c] = schema
+    if ([a, b, c].some((v) => typeof v !== 'number')) {
+      return true
+    }
+
+    const valid = a === b + c
+    return valid
+  }
+})
+
 export function validate(schema: JSONSchema, data: ConditionalParameters) {
   const validator = ajv.getSchema(schema.$id) || ajv.compile(schema)
 

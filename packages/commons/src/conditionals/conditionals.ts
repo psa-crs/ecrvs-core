@@ -415,6 +415,28 @@ export function createFieldConditionals(fieldId: string) {
         required: [fieldId]
       })
     },
+    isEqualToSumOf(val1: FieldReference, val2: FieldReference) {
+      // Get referenced field IDs from your FieldReference
+      const field1Id = val1.$$field
+      const field2Id = val2.$$field
+
+      // Return a JSON Schema object via defineFormConditional
+      return defineFormConditional({
+        type: 'object',
+        properties: {
+          [fieldId]: { type: 'number' },
+          [field1Id]: { type: 'number' },
+          [field2Id]: { type: 'number' }
+        },
+        required: [fieldId, field1Id, field2Id],
+
+        sumOf: [
+          { $data: `/$form/${fieldId}` },
+          { $data: `/$form/${field1Id}` },
+          { $data: `/$form/${field2Id}` }
+        ]
+      })
+    },
     /**
      * Use case: Some fields are rendered when selection is not made, or boolean false is explicitly selected.
      * @example field('recommender.none').isFalsy() vs not(field('recommender.none').isEqualTo(true))
