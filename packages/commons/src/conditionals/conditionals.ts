@@ -430,11 +430,11 @@ export function createFieldConditionals(fieldId: string) {
         },
         required: [fieldId, field1Id, field2Id],
 
-        sumOf: [
-          { $data: `/$form/${fieldId}` },
-          { $data: `/$form/${field1Id}` },
-          { $data: `/$form/${field2Id}` }
-        ]
+        sumOf: {
+          sum: { $data: `/$form/${fieldId}` },
+          field1: { $data: `/$form/${field1Id}` },
+          field2: { $data: `/$form/${field2Id}` }
+        }
       })
     },
     isGreaterThanOrEqualTo(value: number | string | FieldReference) {

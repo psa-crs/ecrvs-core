@@ -119,20 +119,35 @@ ajv.addKeyword({
 ajv.addKeyword({
   keyword: 'sumOf',
   type: 'object',
-  schemaType: 'array',
+  schemaType: 'object',
   errors: true,
   $data: true,
-  validate(schema: number[]) {
-    if (!Array.isArray(schema) || schema.length !== 3) {
+  validate(schema: any, data: Record<string, number>) {
+    const { sum, field1, field2 } = schema
+
+    const getRefPath = (ref: any) =>
+      typeof ref === 'object' && '$data' in ref ? ref.$data : ref
+
+    const sumKey = getRefPath(sum)
+    const field1Key = getRefPath(field1)
+    const field2Key = getRefPath(field2)
+
+    const total = data[sumKey]
+    const num1 = data[field1Key]
+    const num2 = data[field2Key]
+
+    console.log(total, num1, num2)
+
+    if (
+      typeof total !== 'number' ||
+      typeof num1 !== 'number' ||
+      typeof num2 !== 'number'
+    ) {
       return true
     }
 
-    const [a, b, c] = schema
-    if ([a, b, c].some((v) => typeof v !== 'number')) {
-      return true
-    }
-
-    const valid = a === b + c
+    // Check if total === num1 + num2
+    const valid = total === num1 + num2
     return valid
   }
 })
