@@ -431,42 +431,10 @@ export function createFieldConditionals(fieldId: string) {
         required: [fieldId, field1Id, field2Id],
 
         sumOf: {
-          sum: { $data: `/$form/${fieldId}` },
-          field1: { $data: `/$form/${field1Id}` },
-          field2: { $data: `/$form/${field2Id}` }
+          sum: fieldId,
+          field1: field1Id,
+          field2: field2Id
         }
-      })
-    },
-    isGreaterThanOrEqualTo(value: number | string | FieldReference) {
-      const fieldSchema: Record<string, any> = { type: 'number' }
-      const properties: Record<string, any> = {}
-      const required: string[] = [fieldId]
-
-      // If comparing against a fixed number
-      if (typeof value === 'number') {
-        fieldSchema.minimum = value
-      } else {
-        // Otherwise, comparing to another field (e.g., >= another field)
-        let refField = ''
-
-        if (isFieldReference(value)) {
-          // If the value is a field reference object
-          refField = value.$$field
-        } else {
-          // If it’s just a string name of another field
-          refField = value
-        }
-        fieldSchema.minimum = { $data: `/$form/${refField}` }
-        properties[refField] = { type: 'number' }
-        required.push(refField)
-      }
-
-      properties[fieldId] = fieldSchema
-
-      return defineFormConditional({
-        type: 'object',
-        properties,
-        required
       })
     },
     /**
