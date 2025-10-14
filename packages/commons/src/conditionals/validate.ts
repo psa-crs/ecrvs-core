@@ -21,6 +21,7 @@ import { mapFieldTypeToZod } from '../events/FieldTypeMapping'
 import { FieldUpdateValue } from '../events/FieldValue'
 import { TranslationConfig } from '../events/TranslationConfig'
 import { UUID } from '../uuid'
+import { medicalAbbreviations } from './abbreviation'
 
 const ajv = new Ajv({
   $data: true,
@@ -128,8 +129,6 @@ ajv.addKeyword({
     const num1 = data?.[field1]
     const num2 = data?.[field2]
 
-    console.log(total, num1, num2)
-
     if (
       typeof total !== 'number' ||
       typeof num1 !== 'number' ||
@@ -141,6 +140,34 @@ ajv.addKeyword({
     // Check if total === num1 + num2
     const valid = total === num1 + num2
     return valid
+  }
+})
+
+ajv.addKeyword({
+  keyword: 'isAbbreviation',
+  type: 'string',
+  schemaType: 'boolean',
+  errors: true,
+  validate(schema: boolean, value: string) {
+    if (!schema) return true
+
+    if (typeof value !== 'string') {
+      return true
+    }
+
+    const items = value
+      .split(',')
+      .map((item) => item.replace(/\./g, '').trim().toUpperCase())
+
+    const foundAbbreviation = items.filter((item) =>
+      medicalAbbreviations.some((abbr) => abbr.code.toUpperCase() === item)
+    )
+
+    if (foundAbbreviation.length && foundAbbreviation.length > 0) {
+      return false
+    }
+
+    return true
   }
 })
 

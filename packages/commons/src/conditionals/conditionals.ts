@@ -437,6 +437,18 @@ export function createFieldConditionals(fieldId: string) {
         }
       })
     },
+    isAbbreviation() {
+      // Get referenced field IDs from your FieldReference
+
+      // Return a JSON Schema object via defineFormConditional
+      return defineFormConditional({
+        type: 'object',
+        properties: {
+          [fieldId]: { type: 'string', isAbbreviation: true }
+        },
+        required: [fieldId]
+      })
+    },
     /**
      * Use case: Some fields are rendered when selection is not made, or boolean false is explicitly selected.
      * @example field('recommender.none').isFalsy() vs not(field('recommender.none').isEqualTo(true))
