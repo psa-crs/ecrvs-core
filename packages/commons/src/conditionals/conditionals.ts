@@ -449,6 +449,30 @@ export function createFieldConditionals(fieldId: string) {
         required: [fieldId]
       })
     },
+    isIllDefined(causesOfDeathFields: FieldReference[], threshold: number) {
+      const fieldIds = causesOfDeathFields.map((field) => field.$$field)
+
+      // Build the JSON Schema properties dynamically
+      const properties = fieldIds.reduce(
+        (acc, id) => {
+          acc[id] = { type: 'string' }
+          return acc
+        },
+        {} as Record<string, any>
+      )
+
+      // Return a valid schema
+      return defineFormConditional({
+        type: 'object',
+        properties,
+        required: fieldIds,
+        // Custom keyword or config (if used by your validator)
+        isIllDefined: {
+          fields: fieldIds,
+          threshold
+        }
+      })
+    },
     /**
      * Use case: Some fields are rendered when selection is not made, or boolean false is explicitly selected.
      * @example field('recommender.none').isFalsy() vs not(field('recommender.none').isEqualTo(true))

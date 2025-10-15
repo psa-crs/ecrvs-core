@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -148,14 +149,14 @@ ajv.addKeyword({
   type: 'string',
   schemaType: 'boolean',
   errors: true,
-  validate(schema: boolean, value: string) {
+  validate(schema: boolean, data: string) {
     if (!schema) return true
 
-    if (typeof value !== 'string') {
+    if (typeof data !== 'string') {
       return true
     }
 
-    const items = value
+    const items = data
       .split(',')
       .map((item) => item.replace(/\./g, '').trim().toUpperCase())
 
@@ -168,6 +169,51 @@ ajv.addKeyword({
     }
 
     return true
+  }
+})
+
+ajv.addKeyword({
+  keyword: 'isIllDefined',
+  type: 'object',
+  schemaType: 'object',
+  errors: true,
+  validate(schema: { fields: string[]; threshold: number }, data: any) {
+    const { fields, threshold } = schema
+    console.log(schema)
+
+    if (!data || typeof data !== 'object') return true
+
+    const causesOfDeath: string[] = fields
+      .flatMap((field) =>
+        (data?.[field] || '')
+          .split(',')
+          .map((v: string) => v.trim())
+          .filter(Boolean)
+      )
+      .filter((val, index, self) => self.indexOf(val) === index)
+
+    console.log(causesOfDeath)
+
+    if (causesOfDeath.length === 0) return true
+
+    // const illDefinedMatches: string[] = []
+    let hasNonIllDefined = false
+
+    for (const term of causesOfDeath) {
+      const results = fuzzySearch(term, illDefinedConditions, threshold).filter(
+        (entry) => entry.score && entry.score < threshold
+      )
+      // if (results.length > 0) {
+      //   illDefinedMatches.push(`${term}`)
+      // }
+      if (results.length === 0) {
+        // Found at least one term that's NOT ill-defined
+        hasNonIllDefined = true
+        break
+      }
+    }
+
+    return hasNonIllDefined
   }
 })
 
@@ -585,4 +631,116 @@ export function areCertificateConditionsMet(
   return conditions.every((condition) => {
     return ajv.validate(condition.conditional, values)
   })
+}
+
+function levenshtein(a: string, b: string): number {
+  const tmp: number[][] = []
+
+  for (let i = 0; i <= a.length; i++) {
+    tmp[i] = [i]
+  }
+
+  for (let j = 0; j <= b.length; j++) {
+    tmp[0][j] = j
+  }
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      tmp[i][j] = Math.min(
+        tmp[i - 1][j] + 1, // deletion
+        tmp[i][j - 1] + 1, // insertion
+        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1) // substitution
+      )
+    }
+  }
+
+  return tmp[a.length][b.length]
+}
+
+function fuzzySearch(
+  query: string,
+  list: string[],
+  threshold: number,
+  limit = 3
+): { item: string; score: number }[] {
+  const COMMON_WORDS = new Set([
+    'failure',
+    'disease',
+    'syndrome',
+    'acute',
+    // 'chronic',
+    'unspecified',
+    // 'undetermine',
+    'shock'
+  ])
+
+  const normalize = (str: string) =>
+    str
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '') // remove punctuation
+      .trim()
+
+  const tokenize = (str: string) =>
+    normalize(str)
+      .split(/\s+/)
+      .filter((w) => w.length >= 3)
+
+  const queryWords = tokenize(query)
+
+  if (queryWords.length === 0) return []
+
+  const results: { item: string; score: number }[] = []
+
+  for (const item of list) {
+    const itemWords = tokenize(item)
+
+    // Fast exact match
+    if (normalize(query) === normalize(item)) {
+      results.push({ item, score: 0 })
+      continue
+    }
+
+    let totalScore = 0
+    let matchCount = 0
+    let largeMismatchFound = false
+
+    for (const qWord of queryWords) {
+      let bestScore = Infinity
+
+      for (const iWord of itemWords) {
+        const dist = levenshtein(qWord, iWord)
+        const normDist = dist / Math.max(qWord.length, iWord.length)
+
+        if (normDist < bestScore) bestScore = normDist
+      }
+
+      if (bestScore !== Infinity) {
+        const weight = COMMON_WORDS.has(qWord) ? 0.5 : 1
+        totalScore += bestScore * weight
+        matchCount++
+
+        // Apply a large mismatch penalty early
+        if (bestScore > 0.4) {
+          // If there's a significant mismatch, apply early penalty
+          largeMismatchFound = true
+          totalScore += 0.5 // Apply additional penalty to the score
+        }
+      }
+    }
+
+    if (matchCount > 0) {
+      const avgScore = totalScore / matchCount
+
+      // If we detected a large mismatch, add a penalty to the final score
+      if (largeMismatchFound) {
+        results.push({ item, score: avgScore + 0.5 }) // Boost the score if mismatch was too large
+      } else {
+        if (avgScore <= threshold) {
+          results.push({ item, score: avgScore })
+        }
+      }
+    }
+  }
+
+  return results.sort((a, b) => a.score - b.score).slice(0, limit)
 }
