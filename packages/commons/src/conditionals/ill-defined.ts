@@ -1,6 +1,7 @@
-const illDefinedConditions: string[] = [
+export const illDefinedConditions: string[] = [
   'cardiac death',
   'cardiac arrest',
+  'cardiac failure',
   'heart failure',
   'ventricular failure',
   'hypotension',

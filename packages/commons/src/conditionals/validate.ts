@@ -23,6 +23,7 @@ import { FieldUpdateValue } from '../events/FieldValue'
 import { TranslationConfig } from '../events/TranslationConfig'
 import { UUID } from '../uuid'
 import { medicalAbbreviations } from './abbreviation'
+import { illDefinedConditions } from './ill-defined'
 
 const ajv = new Ajv({
   $data: true,
@@ -179,8 +180,6 @@ ajv.addKeyword({
   errors: true,
   validate(schema: { fields: string[]; threshold: number }, data: any) {
     const { fields, threshold } = schema
-    console.log(schema)
-
     if (!data || typeof data !== 'object') return true
 
     const causesOfDeath: string[] = fields
@@ -192,8 +191,6 @@ ajv.addKeyword({
       )
       .filter((val, index, self) => self.indexOf(val) === index)
 
-    console.log(causesOfDeath)
-
     if (causesOfDeath.length === 0) return true
 
     // const illDefinedMatches: string[] = []
@@ -201,8 +198,9 @@ ajv.addKeyword({
 
     for (const term of causesOfDeath) {
       const results = fuzzySearch(term, illDefinedConditions, threshold).filter(
-        (entry) => entry.score && entry.score < threshold
+        (entry) => entry.score >= 0 && entry.score < threshold
       )
+
       // if (results.length > 0) {
       //   illDefinedMatches.push(`${term}`)
       // }
@@ -214,6 +212,42 @@ ajv.addKeyword({
     }
 
     return hasNonIllDefined
+  }
+})
+
+ajv.addKeyword({
+  keyword: 'checkChildName',
+  type: 'object',
+  schemaType: 'boolean', // 👈 schema is just true/false
+  errors: true,
+  validate(schema: boolean, data: any) {
+    console.log(data)
+    // if (!schema) return true // if keyword is false, skip validation
+
+    // const childName = data?.childName
+    // const fatherLastName = data?.fatherLastName
+    // const motherLastName = data?.motherLastName
+
+    // if (!childName) return true // allow empty name
+
+    // const normalize = (v: string) => (v || '').trim().toLowerCase()
+
+    // const child = normalize(childName)
+    // const father = normalize(fatherLastName)
+    // const mother = normalize(motherLastName)
+
+    // const valid = child !== father && child !== mother
+
+    // if (!valid) {
+    //   (validate as any).errors = [
+    //     {
+    //       keyword: 'checkChildName',
+    //       message: "Child's name should not match father's or mother's last name"
+    //     }
+    //   ]
+    // }
+
+    return true
   }
 })
 
@@ -697,7 +731,7 @@ function fuzzySearch(
     // Fast exact match
     if (normalize(query) === normalize(item)) {
       results.push({ item, score: 0 })
-      continue
+      break
     }
 
     let totalScore = 0

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -454,8 +455,8 @@ export function createFieldConditionals(fieldId: string) {
 
       // Build the JSON Schema properties dynamically
       const properties = fieldIds.reduce(
-        (acc, id) => {
-          acc[id] = { type: 'string' }
+        (acc, field) => {
+          acc[field] = { type: 'string' }
           return acc
         },
         {} as Record<string, any>
@@ -465,12 +466,24 @@ export function createFieldConditionals(fieldId: string) {
       return defineFormConditional({
         type: 'object',
         properties,
-        required: fieldIds,
+        // required: fieldIds,
         // Custom keyword or config (if used by your validator)
         isIllDefined: {
           fields: fieldIds,
           threshold
         }
+      })
+    },
+    isValidChildName() {
+      // Return a valid schema
+      return defineFormConditional({
+        type: 'object',
+        properties: {
+          [fieldId]: {
+            type: 'string'
+          }
+        },
+        checkChildName: true
       })
     },
     /**
