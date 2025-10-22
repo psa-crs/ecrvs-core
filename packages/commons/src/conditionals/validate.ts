@@ -215,42 +215,6 @@ ajv.addKeyword({
   }
 })
 
-ajv.addKeyword({
-  keyword: 'checkChildName',
-  type: 'object',
-  schemaType: 'boolean', // 👈 schema is just true/false
-  errors: true,
-  validate(schema: boolean, data: any) {
-    console.log(data)
-    // if (!schema) return true // if keyword is false, skip validation
-
-    // const childName = data?.childName
-    // const fatherLastName = data?.fatherLastName
-    // const motherLastName = data?.motherLastName
-
-    // if (!childName) return true // allow empty name
-
-    // const normalize = (v: string) => (v || '').trim().toLowerCase()
-
-    // const child = normalize(childName)
-    // const father = normalize(fatherLastName)
-    // const mother = normalize(motherLastName)
-
-    // const valid = child !== father && child !== mother
-
-    // if (!valid) {
-    //   (validate as any).errors = [
-    //     {
-    //       keyword: 'checkChildName',
-    //       message: "Child's name should not match father's or mother's last name"
-    //     }
-    //   ]
-    // }
-
-    return true
-  }
-})
-
 export function validate(schema: JSONSchema, data: ConditionalParameters) {
   const validator = ajv.getSchema(schema.$id) || ajv.compile(schema)
 

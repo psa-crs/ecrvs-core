@@ -474,18 +474,6 @@ export function createFieldConditionals(fieldId: string) {
         }
       })
     },
-    isValidChildName() {
-      // Return a valid schema
-      return defineFormConditional({
-        type: 'object',
-        properties: {
-          [fieldId]: {
-            type: 'string'
-          }
-        },
-        checkChildName: true
-      })
-    },
     /**
      * Use case: Some fields are rendered when selection is not made, or boolean false is explicitly selected.
      * @example field('recommender.none').isFalsy() vs not(field('recommender.none').isEqualTo(true))
@@ -556,7 +544,7 @@ export function createFieldConditionals(fieldId: string) {
         properties: {
           [fieldId]: {
             type: 'string',
-            minLength: 1,
+            // minLength: 1,
             pattern:
               "^[\\p{Script=Latin}0-9'.-]*(\\([\\p{Script=Latin}0-9'.-]+\\))?[\\p{Script=Latin}0-9'.-]*( [\\p{Script=Latin}0-9'.-]*(\\([\\p{Script=Latin}0-9'.-]+\\))?[\\p{Script=Latin}0-9'.-]*)*$",
             description:
