@@ -538,13 +538,13 @@ export function createFieldConditionals(fieldId: string) {
         },
         required: [fieldId]
       }),
-    isValidEnglishName: () =>
+    isValidEnglishName: (isRequiredField: boolean = true) =>
       defineFormConditional({
         type: 'object',
         properties: {
           [fieldId]: {
             type: 'string',
-            // minLength: 1,
+            ...(isRequiredField && { minLength: 1 }),
             pattern:
               "^[\\p{Script=Latin}0-9'.-]*(\\([\\p{Script=Latin}0-9'.-]+\\))?[\\p{Script=Latin}0-9'.-]*( [\\p{Script=Latin}0-9'.-]*(\\([\\p{Script=Latin}0-9'.-]+\\))?[\\p{Script=Latin}0-9'.-]*)*$",
             description:
