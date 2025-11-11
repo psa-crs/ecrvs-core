@@ -29,9 +29,12 @@ const messages = defineMessages({
 const EMPTY_TIME = '--'
 
 // Time validation schema (HH:mm or HH:mm AM/PM format)
-const TimeValue = z
-  .string()
-  .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9](\s?(?:AM|PM))?$/)
+// const TimeValue = z
+//   .string()
+//   .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9](\s?(?:AM|PM))?$/)
+
+// Time validation schema (HH:mm in 24 hour format)
+const TimeValue = z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
 
 function TimeInput({
   onChange,
@@ -74,17 +77,21 @@ function parseAndFormatTime(intl: IntlShape, value?: string) {
   }
 
   const dummyDate = new Date()
-  const [timePart, meridiem] = parsed.data.split(' ')
-  const [hourStr, minuteStr] = timePart.split(':')
+  // const [timePart, meridiem] = parsed.data.split(' ')
+  // const [hourStr, minuteStr] = timePart.split(':')
 
-  let hours = parseInt(hourStr, 10)
+  // let hours = parseInt(hourStr, 10)
+  // const minutes = parseInt(minuteStr, 10)
+  const [hourStr, minuteStr] = parsed.data.split(':')
+
+  // if (meridiem === 'PM' && hours < 12) {
+  //   hours += 12
+  // } else if (meridiem === 'AM' && hours === 12) {
+  //   hours = 0
+  // }
+
+  const hours = parseInt(hourStr, 10)
   const minutes = parseInt(minuteStr, 10)
-
-  if (meridiem === 'PM' && hours < 12) {
-    hours += 12
-  } else if (meridiem === 'AM' && hours === 12) {
-    hours = 0
-  }
 
   dummyDate.setHours(hours)
   dummyDate.setMinutes(minutes)
