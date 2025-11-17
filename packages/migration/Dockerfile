@@ -1,5 +1,5 @@
 ARG  BRANCH=develop
-FROM ghcr.io/oni1003/ocrvs-base:release-v1.9.0
+FROM ghcr.io/oni-on1003/ocrvs-base:release-v1.9.0
 
 USER root
 # Install envsubst and clean up apt cache
