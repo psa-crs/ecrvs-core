@@ -5,7 +5,7 @@
 # OpenCRVS is also distributed under the terms of the Civil Registration
 # & Healthcare Disclaimer located at http://opencrvs.org/license.
 #
-# Copyright (C) The OpenCRVS Authors located at https://github.com/opencrvs/opencrvs-core/blob/master/AUTHORS.
+# Copyright (C) The OpenCRVS Authors located at https://github.com/oni-on1003/opencrvs-core/blob/master/AUTHORS.
 name: Publish images from any branch or tag
 run-name: Publish images from ${{ inputs.branch_tag_name || github.ref_name }}
 on:
@@ -50,6 +50,7 @@ on:
         type: boolean
         required: false
         default: false
+        description: Skip security check
       build_arm:
         description: Build ARM images
         type: boolean
@@ -108,6 +109,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PUBLISH_TOKEN }}
+
       - name: Build and push base image
         uses: Wandalen/wretry.action@v3.8.0
         with:
@@ -118,9 +120,9 @@ jobs:
             push: true
             context: .
             tags: |
-              ghcr.io/opencrvs/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}${{ steps.arch_label.outputs.arch }}
-              ghcr.io/opencrvs/ocrvs-base:${{ steps.set-version-and-branch.outputs.branch }}${{ steps.arch_label.outputs.arch }}
-            cache-from: type=registry,ref=ghcr.io/opencrvs/ocrvs-base:${{ steps.set-version-and-branch.outputs.branch }}${{ steps.arch_label.outputs.arch }}
+              ghcr.io/oni-on1003/ocrvs-base:${{ steps.set-version-and-branch.outputs.version }}${{ steps.arch_label.outputs.arch }}
+              ghcr.io/oni-on1003/ocrvs-base:${{ steps.set-version-and-branch.outputs.branch }}${{ steps.arch_label.outputs.arch }}
+            cache-from: type=registry,ref=ghcr.io/oni-on1003/ocrvs-base:${{ steps.set-version-and-branch.outputs.branch }}${{ steps.arch_label.outputs.arch }}
             cache-to: type=inline
 
     outputs:
@@ -138,20 +140,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PUBLISH_TOKEN }}
+
       - name: Create and push multi-arch manifest
         env:
           BUILD_ARM: ${{ inputs.build_arm == true }}
         run: |
-          REPO="ghcr.io/opencrvs/ocrvs-base"
+          REPO="ghcr.io/oni-on1003/ocrvs-base"
           for TAG in ${{ needs.base.outputs.branch }} ${{ needs.base.outputs.version }}; do
             if [[ "$BUILD_ARM" == "true" ]]; then
               MANIFEST_LIST="$REPO:$TAG-amd64 $REPO:$TAG-arm64"
             else
               MANIFEST_LIST="$REPO:$TAG-amd64"
             fi
-            echo "[🔁 pushing ] ghcr.io/opencrvs/ocrvs-base:$TAG"
-            docker manifest create ghcr.io/opencrvs/ocrvs-base:$TAG $MANIFEST_LIST
-            docker manifest push ghcr.io/opencrvs/ocrvs-base:$TAG
+            echo "[🔁 pushing ] ghcr.io/oni-on1003/ocrvs-base:$TAG"
+            docker manifest create ghcr.io/oni-on1003/ocrvs-base:$TAG $MANIFEST_LIST
+            docker manifest push ghcr.io/oni-on1003/ocrvs-base:$TAG
           done
   build:
     needs: [base, merge-manifest]
@@ -204,9 +207,9 @@ jobs:
             push: true
             context: .
             tags: |
-              ghcr.io/opencrvs/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}${{ steps.arch_label.outputs.arch }}
-              ghcr.io/opencrvs/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.branch }}${{ steps.arch_label.outputs.arch }}
-            cache-from: type=registry,ref=ghcr.io/opencrvs/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.branch }}${{ steps.arch_label.outputs.arch }}
+              ghcr.io/oni-on1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}${{ steps.arch_label.outputs.arch }}
+              ghcr.io/oni-on1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.branch }}${{ steps.arch_label.outputs.arch }}
+            cache-from: type=registry,ref=ghcr.io/oni-on1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.branch }}${{ steps.arch_label.outputs.arch }}
             cache-to: type=inline
 
   merge-services-manifest:
@@ -229,7 +232,7 @@ jobs:
         env:
           BUILD_ARM: ${{ inputs.build_arm == true }}
         run: |
-          REPO_PREFIX="ghcr.io/opencrvs/ocrvs"
+          REPO_PREFIX="ghcr.io/oni-on1003/ocrvs"
 
           for TAG in ${{ needs.base.outputs.branch }} ${{ needs.base.outputs.version }}; do
             # Create manifest list based on whether ARM build exists
@@ -261,7 +264,7 @@ jobs:
       - name: Gather Trivy output from base branch image
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'ghcr.io/opencrvs/ocrvs-${{ matrix.service }}:${{ github.event.pull_request.base.ref }}'
+          image-ref: 'ghcr.io/oni-on1003/ocrvs-${{ matrix.service }}:${{ github.event.pull_request.base.ref }}'
           trivy-config: trivy.yaml
           format: 'sarif'
           output: './trivy-results-base.sarif'
@@ -269,7 +272,7 @@ jobs:
       - name: Gather Trivy output from newly build image
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'ghcr.io/opencrvs/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}'
+          image-ref: 'ghcr.io/oni-on1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}'
           trivy-config: trivy.yaml
           format: 'sarif'
           output: './trivy-results-branch.sarif'
@@ -300,5 +303,5 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'ghcr.io/opencrvs/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}'
+          image-ref: 'ghcr.io/oni-on1003/ocrvs-${{ matrix.service }}:${{ needs.base.outputs.version }}'
           trivy-config: trivy.yaml

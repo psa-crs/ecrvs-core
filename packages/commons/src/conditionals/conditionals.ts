@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -504,6 +505,64 @@ export function createFieldConditionals(fieldId: string) {
         required: [this.$$field]
       })
     },
+    isEqualToSumOf(val1: FieldReference, val2: FieldReference) {
+      // Get referenced field IDs from your FieldReference
+      const field1Id = val1.$$field
+      const field2Id = val2.$$field
+
+      // Return a JSON Schema object via defineFormConditional
+      return defineFormConditional({
+        type: 'object',
+        properties: {
+          [fieldId]: { type: 'number' },
+          [field1Id]: { type: 'number' },
+          [field2Id]: { type: 'number' }
+        },
+        required: [fieldId, field1Id, field2Id],
+
+        sumOf: {
+          sum: fieldId,
+          field1: field1Id,
+          field2: field2Id
+        }
+      })
+    },
+    isAbbreviation() {
+      // Get referenced field IDs from your FieldReference
+
+      // Return a JSON Schema object via defineFormConditional
+      return defineFormConditional({
+        type: 'object',
+        properties: {
+          [fieldId]: { type: 'string', isAbbreviation: true }
+        },
+        required: [fieldId]
+      })
+    },
+    isIllDefined(causesOfDeathFields: FieldReference[], threshold: number) {
+      const fieldIds = causesOfDeathFields.map((field) => field.$$field)
+
+      // Build the JSON Schema properties dynamically
+      const properties = fieldIds.reduce(
+        (acc, field) => {
+          acc[field] = { type: 'string' }
+          return acc
+        },
+        {} as Record<string, any>
+      )
+
+      // Return a valid schema
+      return defineFormConditional({
+        type: 'object',
+        properties,
+        // required: fieldIds,
+        // Custom keyword or config (if used by your validator)
+        isIllDefined: {
+          fields: fieldIds,
+          threshold
+        }
+      })
+    },
     /**
      * Use case: Some fields are rendered when selection is not made, or boolean false is explicitly selected.
      * @example field('recommender.none').isFalsy() vs not(field('recommender.none').isEqualTo(true))
@@ -574,7 +633,7 @@ export function createFieldConditionals(fieldId: string) {
         required: [fieldId]
       })
     },
-    isValidEnglishName() {
+    isValidEnglishName(isRequiredField: boolean = true) {
       return defineFormConditional({
         type: 'object',
         properties: {

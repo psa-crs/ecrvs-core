@@ -122,7 +122,7 @@ export function ValueOutput({
   }
 
   if (isTimeFieldType(field)) {
-    return <TimeField.Output value={field.value} />
+    return <TimeField.Output {...field} />
   }
 
   if (isDateRangeFieldType(field)) {
