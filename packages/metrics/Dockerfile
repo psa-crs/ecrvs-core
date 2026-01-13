@@ -1,5 +1,5 @@
 ARG  BRANCH=develop
-FROM ghcr.io/oni-on1003/ocrvs-base:release-v1.9.1
+FROM ghcr.io/psa-crs/ocrvs-base:release-v1.9.1
 
 USER node
 
