@@ -28,7 +28,7 @@ const messages = defineMessages({
 
 const EMPTY_TIME = '--'
 
-// Time validation schema (HH:mm or HH:mm AM/PM format)
+// Time validation schema (HH:mm in 24 hour format)
 const TimeValue = z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
 
 function TimeInput({
@@ -64,11 +64,7 @@ function TimeInput({
   )
 }
 
-function parseAndFormatTime(
-  intl: IntlShape,
-  value?: string,
-  use12HourFormat?: boolean
-) {
+function parseAndFormatTime(intl: IntlShape, value?: string) {
   const parsed = TimeValue.safeParse(value)
 
   if (!parsed.success) {
@@ -76,6 +72,7 @@ function parseAndFormatTime(
   }
 
   const dummyDate = new Date()
+
   const [hourStr, minuteStr] = parsed.data.split(':')
 
   const hours = parseInt(hourStr, 10)
@@ -84,14 +81,12 @@ function parseAndFormatTime(
   dummyDate.setHours(hours)
   dummyDate.setMinutes(minutes)
 
-  const timeFormat = use12HourFormat ? 'hh:mm a' : 'HH:mm'
-
-  return format(dummyDate, timeFormat)
+  return format(dummyDate, intl.formatMessage(messages.timeFormat))
 }
 
-function TimeOutput({ value, config }: { value?: string; config?: any }) {
+function TimeOutput({ value }: { value?: string }) {
   const intl = useIntl()
-  return parseAndFormatTime(intl, value, config?.configuration?.use12HourFormat)
+  return parseAndFormatTime(intl, value)
 }
 
 function stringify(value: string | undefined, context: { intl: IntlShape }) {
