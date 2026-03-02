@@ -2263,6 +2263,11 @@ const countryMessagesToDefine: Record<
     defaultMessage: 'Syrian Arab Republic',
     description: 'ISO Country: SYR'
   },
+  TWN: {
+    id: 'countries.TWN',
+    defaultMessage: 'Taiwan',
+    description: 'ISO Country: TWN'
+  },
   TJK: {
     id: 'countries.TJK',
     defaultMessage: 'Tajikistan',
