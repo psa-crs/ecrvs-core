@@ -355,6 +355,8 @@ mkdir -p data/minio
 chmod 775 data/minio
 mkdir -p data/postgres
 chmod 775 data/postgres
+mkdir -p data/dataFiles
+chmod 775 data/dataFiles
 
 echo -e "\033[32m:::::::::::::::::::: Building OpenCRVS dependencies ::::::::::::::::::::\033[0m"
 echo

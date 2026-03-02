@@ -56,6 +56,7 @@ dirs=(
   "data/minio"
   "data/backups"
   "data/postgres"
+  "data/dataFiles"
 )
 
 for dir in "${dirs[@]}"; do

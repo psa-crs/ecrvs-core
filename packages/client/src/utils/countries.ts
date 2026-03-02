@@ -237,6 +237,7 @@ export const countries = [
   { value: 'SWE', label: messages.SWE },
   { value: 'CHE', label: messages.CHE },
   { value: 'SYR', label: messages.SYR },
+  { value: 'TWN', label: messages.TWN },
   { value: 'TJK', label: messages.TJK },
   { value: 'THA', label: messages.THA },
   { value: 'MKD', label: messages.MKD },

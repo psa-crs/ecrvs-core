@@ -104,7 +104,7 @@ export function validationErrorsInActionFormExist({
         formWithoutHiddenFields,
         context
       )
-
+      // console.log(page.id, formErrors)
       return Object.values(formErrors).some(
         (fieldErrors) => (fieldErrors ?? []).length > 0
       )
