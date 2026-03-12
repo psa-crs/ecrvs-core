@@ -189,32 +189,36 @@ ajv.addKeyword({
       format
     } = schema
 
+    console.log(schema)
+
     const dob = data?.[dateOfBirthField]
     const dod = data?.[deathDateField]
     const tod = data?.[deathTimeField]
     const ageValue = data?.[ageField]
 
+    return true
+
     // age or dates not provided or invalid — skip age validation
-    if (!ageValue || !isValidDateFormat(dob) || !isValidDateFormat(dod)) {
-      return true
-    }
+    // if (!ageValue || !isValidDateFormat(dob) || !isValidDateFormat(dod)) {
+    //   return true
+    // }
 
-    const dateOfBirth = new Date(`${dob}T00:00:00+00:00`)
-    const dateOfDeath = tod
-      ? new Date(`${dod}T${tod}:00+00:00`)
-      : new Date(`${dod}T00:00:00+00:00`)
+    // const dateOfBirth = new Date(`${dob}T00:00:00+00:00`)
+    // const dateOfDeath = tod
+    //   ? new Date(`${dod}T${tod}:00+00:00`)
+    //   : new Date(`${dod}T00:00:00+00:00`)
 
-    const deceasedAge = getAgeOfDeceased(dateOfBirth, dateOfDeath, format)
+    // const deceasedAge = getAgeOfDeceased(dateOfBirth, dateOfDeath, format)
 
-    const sameDay =
-      dateOfBirth.toISOString().slice(0, 10) ===
-      dateOfDeath.toISOString().slice(0, 10)
+    // const sameDay =
+    //   dateOfBirth.toISOString().slice(0, 10) ===
+    //   dateOfDeath.toISOString().slice(0, 10)
 
-    return (
-      (Number(ageValue) === deceasedAge && !(format === 'hours' && !sameDay)) ||
-      (format === 'days' && deceasedAge - Number(ageValue) === 1) ||
-      (format === 'hours' && !sameDay && deceasedAge < Number(ageValue))
-    )
+    // return (
+    //   (Number(ageValue) === deceasedAge && !(format === 'hours' && !sameDay)) ||
+    //   (format === 'days' && deceasedAge - Number(ageValue) === 1) ||
+    //   (format === 'hours' && !sameDay && deceasedAge < Number(ageValue))
+    // )
   }
 })
 

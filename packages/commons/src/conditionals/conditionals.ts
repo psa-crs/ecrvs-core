@@ -542,7 +542,7 @@ export function createFieldConditionals(fieldId: string) {
       return defineFormConditional({
         type: 'object',
         properties: {
-          [this.$$field]: { type: 'string' },
+          [this.$$field]: { type: 'number' },
           [dobFieldId]: { type: 'string' },
           [dodFieldId]: { type: 'string' },
           [todFieldId]: { type: 'string' }
