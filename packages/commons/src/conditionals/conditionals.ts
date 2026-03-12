@@ -514,16 +514,45 @@ export function createFieldConditionals(fieldId: string) {
       return defineFormConditional({
         type: 'object',
         properties: {
-          [fieldId]: { type: 'number' },
+          [this.$$field]: { type: 'number' },
           [field1Id]: { type: 'number' },
           [field2Id]: { type: 'number' }
         },
-        required: [fieldId, field1Id, field2Id],
+        required: [this.$$field, field1Id, field2Id],
 
         sumOf: {
-          sum: fieldId,
+          sum: this.$$field,
           field1: field1Id,
           field2: field2Id
+        }
+      })
+    },
+    isValidDeceasedAge(
+      dobField: FieldReference,
+      dodField: FieldReference,
+      todField: FieldReference,
+      format: 'years' | 'months' | 'days' | 'hours'
+    ) {
+      // Get referenced field IDs from your FieldReference
+      const dobFieldId = dobField.$$field
+      const dodFieldId = dodField.$$field
+      const todFieldId = todField.$$field
+
+      // Return a JSON Schema object via defineFormConditional
+      return defineFormConditional({
+        type: 'object',
+        properties: {
+          [this.$$field]: { type: 'string' },
+          [dobFieldId]: { type: 'string' },
+          [dodFieldId]: { type: 'string' },
+          [todFieldId]: { type: 'string' }
+        },
+        isValidAgeOfDeceased: {
+          ageField: this.$$field,
+          dateOfBirthField: dobFieldId,
+          deathDateField: dodFieldId,
+          deathTimeField: todFieldId,
+          format
         }
       })
     },
