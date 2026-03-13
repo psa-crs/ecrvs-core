@@ -221,8 +221,6 @@ ajv.addKeyword({
 
     const deceasedAge = getAgeOfDeceased(dateOfBirth, dateOfDeath, format)
 
-    console.log(dob, dod, tod, ageValue, deceasedAge)
-
     const sameDay =
       dateOfBirth.toISOString().slice(0, 10) ===
       dateOfDeath.toISOString().slice(0, 10)
