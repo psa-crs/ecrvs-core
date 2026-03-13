@@ -204,7 +204,13 @@ ajv.addKeyword({
     const ageValue = data?.[ageField]
 
     // age or dates not provided or invalid — skip age validation
-    if (!ageValue || !isValidDateFormat(dob) || !isValidDateFormat(dod)) {
+    if (
+      !ageValue ||
+      !isValidDateFormat(dob) ||
+      !isValidDateFormat(dod) ||
+      !dod ||
+      !dob
+    ) {
       return true
     }
 
@@ -214,6 +220,8 @@ ajv.addKeyword({
       : new Date(`${dod}T00:00:00+00:00`)
 
     const deceasedAge = getAgeOfDeceased(dateOfBirth, dateOfDeath, format)
+
+    console.log(dob, dod, tod, ageValue, deceasedAge)
 
     const sameDay =
       dateOfBirth.toISOString().slice(0, 10) ===
