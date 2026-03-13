@@ -531,7 +531,7 @@ export function createFieldConditionals(fieldId: string) {
       dobField: FieldReference,
       dodField: FieldReference,
       todField: FieldReference,
-      format: 'years' | 'months' | 'days' | 'hours'
+      format: 'years' | 'months' | 'days' | 'hours' | 'minutes'
     ) {
       // Get referenced field IDs from your FieldReference
       const dobFieldId = dobField.$$field

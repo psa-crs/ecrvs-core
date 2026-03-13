@@ -137,11 +137,12 @@ export const isValidDateFormat = (date: string) => {
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
 const MS_PER_HOUR = 1000 * 60 * 60
+const MS_PER_MINUTE = 1000 * 60
 
 function getAgeOfDeceased(
   dateOfBirth: Date,
   dateOfDeath: Date,
-  format: 'years' | 'months' | 'days' | 'hours' = 'years'
+  format: 'years' | 'months' | 'days' | 'hours' | 'minutes' = 'years'
 ): number {
   if (dateOfDeath < dateOfBirth) {
     return 0
@@ -167,12 +168,20 @@ function getAgeOfDeceased(
     return Math.floor(diffTime / MS_PER_DAY)
   }
 
-  // format === 'hours'
+  if (format === 'hours') {
+    const diffTime = dateOfDeath.getTime() - dateOfBirth.getTime()
+    const remainingMs = diffTime - MS_PER_DAY
+    return remainingMs < 0
+      ? Math.floor(diffTime / MS_PER_HOUR)
+      : Math.floor(remainingMs / MS_PER_HOUR)
+  }
+
+  // format === 'minutes'
   const diffTime = dateOfDeath.getTime() - dateOfBirth.getTime()
   const remainingMs = diffTime - MS_PER_DAY
   return remainingMs < 0
-    ? Math.floor(diffTime / MS_PER_HOUR)
-    : Math.floor(remainingMs / MS_PER_HOUR)
+    ? Math.floor(diffTime / MS_PER_MINUTE)
+    : Math.floor(remainingMs / MS_PER_MINUTE)
 }
 
 ajv.addKeyword({
@@ -189,14 +198,10 @@ ajv.addKeyword({
       format
     } = schema
 
-    console.log(schema)
-
     const dob = data?.[dateOfBirthField]
     const dod = data?.[deathDateField]
     const tod = data?.[deathTimeField]
     const ageValue = data?.[ageField]
-
-    console.log(data)
 
     // age or dates not provided or invalid — skip age validation
     if (!ageValue || !isValidDateFormat(dob) || !isValidDateFormat(dod)) {
@@ -215,9 +220,14 @@ ajv.addKeyword({
       dateOfDeath.toISOString().slice(0, 10)
 
     return (
-      (Number(ageValue) === deceasedAge && !(format === 'hours' && !sameDay)) ||
+      (Number(ageValue) === deceasedAge &&
+        !(format === 'hours' && !sameDay) &&
+        !(format === 'minutes' && !sameDay)) ||
       (format === 'days' && deceasedAge - Number(ageValue) === 1) ||
-      (format === 'hours' && !sameDay && deceasedAge < Number(ageValue))
+      (format === 'hours' && !sameDay && deceasedAge < Number(ageValue)) ||
+      (format === 'hours' && sameDay && !tod) ||
+      (format === 'minutes' && !sameDay && deceasedAge < Number(ageValue)) ||
+      (format === 'minutes' && sameDay && !tod)
     )
   }
 })
