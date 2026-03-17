@@ -197,6 +197,117 @@ ajv.addKeyword({
   }
 })
 
+const datePattern = /^\d{4}-\d{1,2}-\d{1,2}$/
+
+export const isValidDateFormat = (date: string) => {
+  if (!datePattern.test(date)) return false
+  const d = new Date(date)
+  return !isNaN(d.getTime())
+}
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+const MS_PER_HOUR = 1000 * 60 * 60
+const MS_PER_MINUTE = 1000 * 60
+
+function getAgeOfDeceased(
+  dateOfBirth: Date,
+  dateOfDeath: Date,
+  format: 'years' | 'months' | 'days' | 'hours' | 'minutes' = 'years'
+): number {
+  if (dateOfDeath < dateOfBirth) {
+    return 0
+  }
+
+  if (format === 'years') {
+    let age = dateOfDeath.getFullYear() - dateOfBirth.getFullYear()
+    const monthDiff = dateOfDeath.getMonth() - dateOfBirth.getMonth()
+    const dayDiff = dateOfDeath.getDate() - dateOfBirth.getDate()
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age--
+    return age
+  }
+
+  if (format === 'months') {
+    let months = (dateOfDeath.getFullYear() - dateOfBirth.getFullYear()) * 12
+    months += dateOfDeath.getMonth() - dateOfBirth.getMonth()
+    if (dateOfDeath.getDate() < dateOfBirth.getDate()) months--
+    return months
+  }
+
+  if (format === 'days') {
+    const diffTime = dateOfDeath.getTime() - dateOfBirth.getTime()
+    return Math.floor(diffTime / MS_PER_DAY)
+  }
+
+  if (format === 'hours') {
+    const diffTime = dateOfDeath.getTime() - dateOfBirth.getTime()
+    const remainingMs = diffTime - MS_PER_DAY
+    return remainingMs < 0
+      ? Math.floor(diffTime / MS_PER_HOUR)
+      : Math.floor(remainingMs / MS_PER_HOUR)
+  }
+
+  // format === 'minutes'
+  const diffTime = dateOfDeath.getTime() - dateOfBirth.getTime()
+  const remainingMs = diffTime - MS_PER_DAY
+  return remainingMs < 0
+    ? Math.floor(diffTime / MS_PER_MINUTE)
+    : Math.floor(remainingMs / MS_PER_MINUTE)
+}
+
+ajv.addKeyword({
+  keyword: 'isValidAgeOfDeceased',
+  type: 'object',
+  schemaType: 'object',
+  errors: true,
+  validate(schema: any, data: any) {
+    const {
+      ageField,
+      dateOfBirthField,
+      deathDateField,
+      deathTimeField,
+      format
+    } = schema
+
+    const dob = data?.[dateOfBirthField]
+    const dod = data?.[deathDateField]
+    const tod = data?.[deathTimeField]
+    const ageValue = data?.[ageField]
+
+    // age or dates not provided or invalid — skip age validation
+    if (
+      !ageValue ||
+      !isValidDateFormat(dob) ||
+      !isValidDateFormat(dod) ||
+      !dod ||
+      !dob
+    ) {
+      return true
+    }
+
+    const dateOfBirth = new Date(`${dob}T00:00:00+00:00`)
+    const dateOfDeath = tod
+      ? new Date(`${dod}T${tod}:00+00:00`)
+      : new Date(`${dod}T00:00:00+00:00`)
+
+    const deceasedAge = getAgeOfDeceased(dateOfBirth, dateOfDeath, format)
+
+    const sameDay =
+      dateOfBirth.toISOString().slice(0, 10) ===
+      dateOfDeath.toISOString().slice(0, 10)
+
+    return (
+      (Number(ageValue) === deceasedAge &&
+        !(format === 'hours' && !sameDay) &&
+        !(format === 'minutes' && !sameDay)) ||
+      (format === 'days' && deceasedAge - Number(ageValue) === 1) ||
+      (format === 'hours' && !sameDay && deceasedAge < Number(ageValue)) ||
+      (format === 'hours' && sameDay && !tod) ||
+      (format === 'minutes' && !sameDay && deceasedAge < Number(ageValue)) ||
+      (format === 'minutes' && sameDay && !tod)
+    )
+  }
+})
+
 ajv.addKeyword({
   keyword: 'sumOf',
   type: 'object',
@@ -229,7 +340,9 @@ ajv.addKeyword({
   schemaType: 'boolean',
   errors: true,
   validate(schema: boolean, data: string) {
-    if (!schema) return true
+    if (!schema) {
+      return true
+    }
 
     if (typeof data !== 'string') {
       return true
@@ -258,7 +371,9 @@ ajv.addKeyword({
   errors: true,
   validate(schema: { fields: string[]; threshold: number }, data: any) {
     const { fields, threshold } = schema
-    if (!data || typeof data !== 'object') return true
+    if (!data || typeof data !== 'object') {
+      return true
+    }
 
     const causesOfDeath: string[] = fields
       .flatMap((field) =>
@@ -269,7 +384,9 @@ ajv.addKeyword({
       )
       .filter((val, index, self) => self.indexOf(val) === index)
 
-    if (causesOfDeath.length === 0) return true
+    if (causesOfDeath.length === 0) {
+      return true
+    }
 
     // const illDefinedMatches: string[] = []
     let hasNonIllDefined = false
@@ -840,7 +957,9 @@ function fuzzySearch(
 
   const queryWords = tokenize(query)
 
-  if (queryWords.length === 0) return []
+  if (queryWords.length === 0) {
+    return []
+  }
 
   const results: { item: string; score: number }[] = []
 
@@ -864,7 +983,9 @@ function fuzzySearch(
         const dist = levenshtein(qWord, iWord)
         const normDist = dist / Math.max(qWord.length, iWord.length)
 
-        if (normDist < bestScore) bestScore = normDist
+        if (normDist < bestScore) {
+          bestScore = normDist
+        }
       }
 
       if (bestScore !== Infinity) {
