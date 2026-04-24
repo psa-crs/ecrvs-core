@@ -143,6 +143,10 @@ export function getLegalStatuses(actions: Action[]) {
       ActionType.DECLARE,
       actions
     ),
+    [EventStatus.enum.VALIDATED]: getDeclarationActionCreationMetadata(
+      ActionType.VALIDATE,
+      actions
+    ),
     [EventStatus.enum.REGISTERED]: getDeclarationActionCreationMetadata(
       ActionType.REGISTER,
       actions

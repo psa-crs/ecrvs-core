@@ -108,11 +108,18 @@ export const usePrintableCertificate = ({
 
   const certificateFonts = certificateConfig.fonts ?? {}
 
+  const acceptedActions = getAcceptedActions(event)
+
+  const updatedActions = acceptedActions.map((action) => ({
+    ...action,
+    annotation: { ...action.annotation, minioUrl: window.config.MINIO_BASE_URL }
+  }))
+
   const svgWithoutFonts = compileSvg({
     templateString: certificateConfig.svg,
     $metadata: modifiedMetadata,
     $declaration: declaration,
-    $actions: getAcceptedActions(event),
+    $actions: updatedActions,
     review: true,
     locations,
     users,

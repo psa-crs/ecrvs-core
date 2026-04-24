@@ -180,6 +180,9 @@ export const QueryExpression = z
     'legalStatuses.DECLARED.createdAtLocation': z.optional(
       z.union([Within, Exact])
     ),
+    'legalStatuses.VALIDATED.createdAtLocation': z.optional(
+      z.union([Within, Exact])
+    ),
     'legalStatuses.REGISTERED.createdAtLocation': z.optional(
       z.union([Within, Exact])
     ),

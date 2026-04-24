@@ -280,6 +280,21 @@ export async function createIndex(
                   estypes.MappingProperty
                 >
               },
+              [EventStatus.enum.VALIDATED]: {
+                type: 'object',
+                properties: {
+                  createdAt: { type: 'date' },
+                  createdBy: { type: 'keyword' },
+                  createdByUserType: { type: 'keyword' },
+                  createdAtLocation: { type: 'keyword' },
+                  createdByRole: { type: 'keyword' },
+                  createdBySignature: { type: 'keyword' },
+                  acceptedAt: { type: 'date' }
+                } satisfies Record<
+                  keyof ActionCreationMetadata,
+                  estypes.MappingProperty
+                >
+              },
               [EventStatus.enum.REGISTERED]: {
                 type: 'object',
                 properties: {

@@ -213,6 +213,7 @@ async function buildClause(
       case 'createdAtLocation':
       case 'updatedAtLocation':
       case 'legalStatuses.DECLARED.createdAtLocation':
+      case 'legalStatuses.VALIDATED.createdAtLocation':
       case 'legalStatuses.REGISTERED.createdAtLocation': {
         const value = clause[key]
 

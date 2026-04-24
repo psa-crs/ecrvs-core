@@ -176,8 +176,41 @@ export const stringifyEventMetadata = ({
               { intl, locations }
             ),
             createdByRole: metadata.legalStatuses.DECLARED.createdByRole,
-            createdBySignature:
-              metadata.legalStatuses.DECLARED.createdBySignature
+            createdBySignature: metadata.legalStatuses.DECLARED
+              .createdBySignature
+              ? new URL(
+                  metadata.legalStatuses.DECLARED.createdBySignature,
+                  window.config.MINIO_BASE_URL
+                ).href
+              : undefined
+          }
+        : null,
+      [EventStatus.enum.VALIDATED]: metadata.legalStatuses.VALIDATED
+        ? {
+            createdAt: DateField.toCertificateVariables(
+              metadata.legalStatuses.VALIDATED.createdAt,
+              { intl, locations }
+            ),
+            createdBy: findUserById(
+              metadata.legalStatuses.VALIDATED.createdBy,
+              users
+            ),
+            createdAtLocation: LocationSearch.toCertificateVariables(
+              metadata.legalStatuses.VALIDATED.createdAtLocation,
+              { intl, locations, adminLevels }
+            ),
+            acceptedAt: DateField.toCertificateVariables(
+              metadata.legalStatuses.VALIDATED.acceptedAt,
+              { intl, locations }
+            ),
+            createdByRole: metadata.legalStatuses.VALIDATED.createdByRole,
+            createdBySignature: metadata.legalStatuses.VALIDATED
+              .createdBySignature
+              ? new URL(
+                  metadata.legalStatuses.VALIDATED.createdBySignature,
+                  window.config.MINIO_BASE_URL
+                ).href
+              : undefined
           }
         : null,
       [EventStatus.enum.REGISTERED]: metadata.legalStatuses.REGISTERED

@@ -105,6 +105,7 @@ export type RegistrationCreationMetadata = z.infer<
 // @TODO: In the future REVOKE should be added to the list of statuses
 export const LegalStatuses = z.object({
   [EventStatus.enum.DECLARED]: ActionCreationMetadata.nullish(),
+  [EventStatus.enum.VALIDATED]: ActionCreationMetadata.nullish(),
   [EventStatus.enum.REGISTERED]: RegistrationCreationMetadata.nullish()
 })
 
@@ -287,6 +288,8 @@ export const EventMetadataDateFieldIdInput = z.enum([
   'updatedAt',
   'legalStatuses.DECLARED.createdAt',
   'legalStatuses.DECLARED.acceptedAt',
+  'legalStatuses.VALIDATED.createdAt',
+  'legalStatuses.VALIDATED.acceptedAt',
   'legalStatuses.REGISTERED.createdAt',
   'legalStatuses.REGISTERED.acceptedAt'
 ])
@@ -300,6 +303,8 @@ export const EventMetadataDateFieldId = z.enum([
   'event.updatedAt',
   'event.legalStatuses.DECLARED.createdAt',
   'event.legalStatuses.DECLARED.acceptedAt',
+  'event.legalStatuses.VALIDATED.createdAt',
+  'event.legalStatuses.VALIDATED.acceptedAt',
   'event.legalStatuses.REGISTERED.createdAt',
   'event.legalStatuses.REGISTERED.acceptedAt'
 ])
