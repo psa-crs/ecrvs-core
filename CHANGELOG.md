@@ -1,5 +1,103 @@
 # Changelog
 
+## 1.9.12
+
+### Infrastructure
+
+- Introduced `CONFIG_ACTION_CONFIRMATION_TOKEN_EXPIRY_SECONDS` environment variable for the auth service to control the expiry of action confirmation tokens. Defaults to `604800` seconds (7 days).
+
+### Improvements
+
+- More expressive `ADDRESS` field configuration
+
+The `fields` array in `ADDRESS` field configuration now accepts a field-override object, giving you per-level control over `required`, `conditionals`, and `label`. Only `id` and `type` are required — all other properties are optional and fall back to sensible defaults: labels default to the value from the country's admin structure configuration, and the country field falls back to a built-in "Country" label.
+
+Previously only a fixed set of string values (`'country'` / `'administrativeArea'`) were accepted. The separate `administrativeLevels` array has been removed in favor of this unified `fields` array.
+
+```ts
+{
+  id: 'applicant.address',
+  type: FieldType.ADDRESS,
+  configuration: {
+    fields: [
+      { id: 'country', type: FieldType.COUNTRY },           // uses default label
+      {
+        id: 'province',
+        type: FieldType.ADMINISTRATIVE_AREA,
+        required: true,
+        label: { id: 'custom.province', defaultMessage: 'Province', description: '' } // optional override
+      },
+      {
+        id: 'district',
+        type: FieldType.ADMINISTRATIVE_AREA,
+        required: false,
+        conditionals: [{ type: ConditionalType.SHOW, conditional: ... }]
+      }
+    ]
+  }
+}
+```
+
+> [!IMPORTANT]
+> The `id` of the object must match the administrative hierarchy id defined in `applicationConfig`.
+
+- The `ADMINISTRATIVE_AREA` field's `configuration.partOf` now uses the standard typed `FieldReference` (produced by `field(...)`) instead of the previous ad-hoc `{ $declaration: string }` shape, and its `defaultValue` now accepts `user(...)` references in addition to plain strings.
+
+### New features
+
+- Support for conditional actions "ENABLE" and "SHOW" in SELECT field options to allow the options to be hidden/disabled conditionally.
+- `COUNTRY` field now supports `optionOverrides` to conditionally hide or disable specific country options using "SHOW" and "ENABLE" conditionals. It can be used independently in a COUNTRY field or in a nested Address subfield.
+- A composite field type (`FIELD_GROUP`) that groups related child fields into a single unit with a shared label, conditionals, and validation.
+
+**Structure:**
+
+```typescript
+{
+  id: 'person.address',
+  type: fieldtype.field_group,
+  fields: [
+    { id: 'country', type: FieldType.COUNTRY },
+    { id: 'province', type: FieldType.ADMINISTRATIVE_AREA, parent: field('person.address').get('country') },
+    { id: 'district', type: FieldType.ADMINISTRATIVE_AREA, parent: field('person.address').get('province') }
+  ]
+}
+```
+
+N.B. Support for `DISPLAY_ON_REVIEW` conditionals in nested fields has not been implemented yet.
+
+### Bug fixes
+
+- Allow nested address fields to use the outer form values in conditionals.
+- Skip hidden fields when generating default values. Note: `defaultValue` only applies on the first mount of a form page — after that the field's value takes precedence, even if the `defaultValue` changes across field versions. [#11476](https://github.com/opencrvs/opencrvs-core/issues/11476)
+- Review page field conditionals have no access to form data, only review page form data. [#11410](https://github.com/opencrvs/opencrvs-core/issues/11410)
+
+## 1.9.11
+
+### New features
+
+- Added support of `updatedByUserRole` for workqueue configuration.
+  Workqueues can now be filtered by a specific role or `user('role')`. [#11848](https://github.com/opencrvs/opencrvs-core/issues/11848)
+
+**Usage example**
+
+```ts
+query: {
+  updatedByUserRole: { type: 'exact', term: user('role') }
+}
+```
+
+### Bug fixes
+
+- Fix newly created drafts in offline mode are not accessible [#11820](https://github.com/opencrvs/opencrvs-core/issues/11820)
+- Fix the rendered date on the review page and the certificate display issue in negative UTC offset time zones. [#11955](https://github.com/opencrvs/opencrvs-core/issues/11955)
+
+### Improvements
+
+- Change reindex call to make operation non-destructive. Create endpoint to track progress of reindex. [#11877](https://github.com/opencrvs/opencrvs-core/issues/11877)
+
+- Explicitly nullify hidden field values to prevent stale data in database and fix incorrect search results [#11695](https://github.com/opencrvs/opencrvs-core/pull/11849)
+- Update accordion behavior on the review page so that only sections containing required or completed fields are expanded by default. [#10133](https://github.com/opencrvs/opencrvs-core/issues/10133)
+
 ## 1.9.10
 
 ### New features
