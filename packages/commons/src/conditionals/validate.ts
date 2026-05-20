@@ -283,13 +283,7 @@ ajv.addKeyword({
     const ageValue = data?.[ageField]
 
     // age or dates not provided or invalid — skip age validation
-    if (
-      !ageValue ||
-      !isValidDateFormat(dob) ||
-      !isValidDateFormat(dod) ||
-      !dod ||
-      !dob
-    ) {
+    if (!ageValue || !isValidDateFormat(dob) || !isValidDateFormat(dod)) {
       return true
     }
 
@@ -308,11 +302,13 @@ ajv.addKeyword({
       (Number(ageValue) === deceasedAge &&
         !(format === 'hours' && !sameDay) &&
         !(format === 'minutes' && !sameDay)) ||
-      (format === 'days' && deceasedAge - Number(ageValue) === 1) ||
+      (format === 'days' && !tod && deceasedAge - Number(ageValue) === 1) ||
       (format === 'hours' && !sameDay && deceasedAge < Number(ageValue)) ||
       (format === 'hours' && sameDay && !tod) ||
       (format === 'minutes' && !sameDay && deceasedAge < Number(ageValue)) ||
-      (format === 'minutes' && sameDay && !tod)
+      (format === 'minutes' &&
+        sameDay &&
+        (!tod || Number(ageValue) <= deceasedAge))
     )
   }
 })
