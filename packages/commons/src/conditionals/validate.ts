@@ -209,7 +209,9 @@ ajv.addKeyword({
 const datePattern = /^\d{4}-\d{1,2}-\d{1,2}$/
 
 export const isValidDateFormat = (date: string) => {
-  if (!datePattern.test(date)) return false
+  if (!datePattern.test(date)) {
+    return false
+  }
   const d = new Date(date)
   return !isNaN(d.getTime())
 }
@@ -231,14 +233,18 @@ function getAgeOfDeceased(
     let age = dateOfDeath.getFullYear() - dateOfBirth.getFullYear()
     const monthDiff = dateOfDeath.getMonth() - dateOfBirth.getMonth()
     const dayDiff = dateOfDeath.getDate() - dateOfBirth.getDate()
-    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age--
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age--
+    }
     return age
   }
 
   if (format === 'months') {
     let months = (dateOfDeath.getFullYear() - dateOfBirth.getFullYear()) * 12
     months += dateOfDeath.getMonth() - dateOfBirth.getMonth()
-    if (dateOfDeath.getDate() < dateOfBirth.getDate()) months--
+    if (dateOfDeath.getDate() < dateOfBirth.getDate()) {
+      months--
+    }
     return months
   }
 
@@ -304,7 +310,9 @@ ajv.addKeyword({
         !(format === 'minutes' && !sameDay)) ||
       (format === 'days' && !tod && deceasedAge - Number(ageValue) === 1) ||
       (format === 'hours' && !sameDay && deceasedAge < Number(ageValue)) ||
-      (format === 'hours' && sameDay && !tod) ||
+      (format === 'hours' &&
+        sameDay &&
+        (!tod || Number(ageValue) <= deceasedAge)) ||
       (format === 'minutes' && !sameDay && deceasedAge < Number(ageValue)) ||
       (format === 'minutes' &&
         sameDay &&
