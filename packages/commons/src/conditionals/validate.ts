@@ -289,7 +289,13 @@ ajv.addKeyword({
     const ageValue = data?.[ageField]
 
     // age or dates not provided or invalid — skip age validation
-    if (!ageValue || !isValidDateFormat(dob) || !isValidDateFormat(dod)) {
+    if (
+      ageValue === undefined ||
+      ageValue === null ||
+      ageValue === '' ||
+      !isValidDateFormat(dob) ||
+      !isValidDateFormat(dod)
+    ) {
       return true
     }
 
@@ -304,12 +310,22 @@ ajv.addKeyword({
       dateOfBirth.toISOString().slice(0, 10) ===
       dateOfDeath.toISOString().slice(0, 10)
 
+    // exact (unfloored) elapsed hours, used to confirm TOD carries a genuine
+    // sub-hour remainder (real minutes) rather than landing on a whole hour
+    const rawHoursElapsed =
+      (dateOfDeath.getTime() - dateOfBirth.getTime() - MS_PER_DAY) / MS_PER_HOUR
+
     return (
       (Number(ageValue) === deceasedAge &&
         !(format === 'hours' && !sameDay) &&
         !(format === 'minutes' && !sameDay)) ||
-      (format === 'days' && !tod && deceasedAge - Number(ageValue) === 1) ||
-      (format === 'hours' && !sameDay && deceasedAge < Number(ageValue)) ||
+      (format === 'days' && deceasedAge - Number(ageValue) === 1) ||
+      (format === 'hours' &&
+        !sameDay &&
+        (deceasedAge < Number(ageValue) ||
+          (deceasedAge === Number(ageValue) &&
+            rawHoursElapsed - Number(ageValue) > 0 &&
+            rawHoursElapsed - Number(ageValue) < 1))) ||
       (format === 'hours' &&
         sameDay &&
         (!tod || Number(ageValue) <= deceasedAge)) ||

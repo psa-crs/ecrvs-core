@@ -618,6 +618,551 @@ describe('age asAge comparisons', () => {
   })
 })
 
+describe('isValidDeceasedAge conditionals', () => {
+  const dobFieldId = 'deceased.dateOfBirth'
+  const dodFieldId = 'deceased.deathDate'
+  const todFieldId = 'deceased.deathTime'
+  const dobField = field(dobFieldId)
+  const dodField = field(dodFieldId)
+  const todField = field(todFieldId)
+
+  function deceasedForm(
+    ageFieldId: string,
+    ageValue: number,
+    dob: string,
+    dod: string,
+    tod?: string
+  ) {
+    return {
+      [ageFieldId]: ageValue,
+      [dobFieldId]: dob,
+      [dodFieldId]: dod,
+      ...(tod ? { [todFieldId]: tod } : {})
+    }
+  }
+
+  describe('years', () => {
+    const ageFieldId = 'deceased.ageInYears'
+    const schema = field(ageFieldId).isValidDeceasedAge(
+      dobField,
+      dodField,
+      todField,
+      'years'
+    )
+
+    it('validates the exact completed years between DOB and DOD', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 26, '2000-01-15', '2026-07-11')
+          )
+        )
+      ).toBe(true)
+    })
+
+    it('rejects an age that does not match the completed years', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 27, '2000-01-15', '2026-07-11')
+          )
+        )
+      ).toBe(false)
+    })
+
+    it('accounts for whether death falls before or on the birthday', () => {
+      // death is one day before the anniversary -> one year less
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 25, '2000-07-12', '2026-07-11')
+          )
+        )
+      ).toBe(true)
+
+      // death is exactly on the anniversary -> full year already counted
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 26, '2000-07-11', '2026-07-11')
+          )
+        )
+      ).toBe(true)
+    })
+
+    it('is unaffected by time of death', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 26, '2000-01-15', '2026-07-11', '23:59')
+          )
+        )
+      ).toBe(true)
+    })
+  })
+
+  describe('months', () => {
+    const ageFieldId = 'deceased.ageInMonths'
+    const schema = field(ageFieldId).isValidDeceasedAge(
+      dobField,
+      dodField,
+      todField,
+      'months'
+    )
+
+    it('validates the exact completed months between DOB and DOD', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 77, '2020-01-15', '2026-07-11')
+          )
+        )
+      ).toBe(true)
+    })
+
+    it('rejects an age that does not match the completed months', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 78, '2020-01-15', '2026-07-11')
+          )
+        )
+      ).toBe(false)
+    })
+
+    it('is unaffected by time of death', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 77, '2020-01-15', '2026-07-11', '00:01')
+          )
+        )
+      ).toBe(true)
+    })
+  })
+
+  describe('days', () => {
+    const ageFieldId = 'deceased.ageInDays'
+    const schema = field(ageFieldId).isValidDeceasedAge(
+      dobField,
+      dodField,
+      todField,
+      'days'
+    )
+
+    it('validates the exact completed days when TOD is known', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 1, '2026-07-10', '2026-07-11', '00:00')
+          )
+        )
+      ).toBe(true)
+    })
+
+    it('also accepts one day less than the computed value when TOD is known (regression: the true birth time is never captured, so this tolerance must not depend on whether TOD happens to be filled in)', () => {
+      // computed deceasedAge is 2 (assumes birth at midnight); the true birth
+      // could plausibly have been later on 07-09, making the real elapsed time
+      // just over 1 day -- both 1 and 2 must be accepted
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 1, '2026-07-09', '2026-07-11', '01:00')
+          )
+        )
+      ).toBe(true)
+
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 2, '2026-07-09', '2026-07-11', '01:00')
+          )
+        )
+      ).toBe(true)
+    })
+
+    it('rejects an age more than one day off from the computed value', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 0, '2026-07-09', '2026-07-11', '01:00')
+          )
+        )
+      ).toBe(false)
+    })
+
+    it('still applies the one-day tolerance when TOD is omitted', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(deceasedForm(ageFieldId, 1, '2026-07-09', '2026-07-11'))
+        )
+      ).toBe(true)
+
+      expect(
+        validate(
+          schema,
+          getFieldParams(deceasedForm(ageFieldId, 2, '2026-07-09', '2026-07-11'))
+        )
+      ).toBe(true)
+    })
+
+    it('validates a same-day death as zero days old', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 0, '2026-07-11', '2026-07-11', '14:00')
+          )
+        )
+      ).toBe(true)
+
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 1, '2026-07-11', '2026-07-11', '14:00')
+          )
+        )
+      ).toBe(false)
+    })
+
+    it('applies the same exact-match/off-by-one rule across a multi-day gap', () => {
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 10, '2026-07-01', '2026-07-11', '10:00')
+          )
+        )
+      ).toBe(true)
+
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 9, '2026-07-01', '2026-07-11', '10:00')
+          )
+        )
+      ).toBe(true)
+
+      expect(
+        validate(
+          schema,
+          getFieldParams(
+            deceasedForm(ageFieldId, 8, '2026-07-01', '2026-07-11', '10:00')
+          )
+        )
+      ).toBe(false)
+    })
+  })
+
+  describe('hours', () => {
+    const ageFieldId = 'deceased.ageInHours'
+    const schema = field(ageFieldId).isValidDeceasedAge(
+      dobField,
+      dodField,
+      todField,
+      'hours'
+    )
+
+    describe('same day', () => {
+      it('accepts any age at or below the hour-of-day of death', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 0, '2026-07-11', '2026-07-11', '14:00')
+            )
+          )
+        ).toBe(true)
+
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 14, '2026-07-11', '2026-07-11', '14:00')
+            )
+          )
+        ).toBe(true)
+      })
+
+      it('rejects an age greater than the hour-of-day of death', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 15, '2026-07-11', '2026-07-11', '14:00')
+            )
+          )
+        ).toBe(false)
+      })
+
+      it('skips the check entirely when time of death is missing', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 23, '2026-07-11', '2026-07-11')
+            )
+          )
+        ).toBe(true)
+      })
+    })
+
+    describe('different day', () => {
+      it('rejects an exact boundary match when TOD lands exactly on the hour (no real minutes to justify it)', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 14, '2026-07-10', '2026-07-11', '14:00')
+            )
+          )
+        ).toBe(false)
+      })
+
+      it('accepts the exact boundary match when TOD carries a genuine minutes remainder', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 14, '2026-07-10', '2026-07-11', '14:50')
+            )
+          )
+        ).toBe(true)
+      })
+
+      it('accepts any age strictly greater than the computed value', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 15, '2026-07-10', '2026-07-11', '14:50')
+            )
+          )
+        ).toBe(true)
+      })
+
+      it('rejects an age below the computed value', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 13, '2026-07-10', '2026-07-11', '14:50')
+            )
+          )
+        ).toBe(false)
+      })
+
+      it('rejects the boundary at midnight when TOD is exactly 00:00 (no remainder)', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 0, '2026-07-10', '2026-07-11', '00:00')
+            )
+          )
+        ).toBe(false)
+      })
+
+      it('accepts zero when TOD is just after midnight', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 0, '2026-07-10', '2026-07-11', '00:05')
+            )
+          )
+        ).toBe(true)
+      })
+
+      it('does not skip validation just because the entered age is 0 (regression: a falsy-zero check previously treated 0 as "missing" and always passed)', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 0, '2026-07-10', '2026-07-11', '14:00')
+            )
+          )
+        ).toBe(false)
+      })
+
+      it('rejects every value when DOB/DOD are more than one calendar day apart', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 23, '2026-07-09', '2026-07-11', '10:00')
+            )
+          )
+        ).toBe(false)
+      })
+    })
+  })
+
+  describe('minutes', () => {
+    const ageFieldId = 'deceased.ageInMinutes'
+    const schema = field(ageFieldId).isValidDeceasedAge(
+      dobField,
+      dodField,
+      todField,
+      'minutes'
+    )
+
+    describe('same day', () => {
+      it('accepts any age at or below the minute-of-day of death', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 0, '2026-07-11', '2026-07-11', '00:30')
+            )
+          )
+        ).toBe(true)
+
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 30, '2026-07-11', '2026-07-11', '00:30')
+            )
+          )
+        ).toBe(true)
+      })
+
+      it('rejects an age greater than the minute-of-day of death', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 31, '2026-07-11', '2026-07-11', '00:30')
+            )
+          )
+        ).toBe(false)
+      })
+
+      it('becomes a no-op once minute-of-day exceeds the field range, since the whole 0-59 range is then achievable', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 59, '2026-07-11', '2026-07-11', '14:00')
+            )
+          )
+        ).toBe(true)
+      })
+
+      it('does not skip validation just because the entered age is 0', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 0, '2026-07-11', '2026-07-11', '00:00')
+            )
+          )
+        ).toBe(true)
+      })
+    })
+
+    describe('different day', () => {
+      it('never accepts an exact boundary match, even with real minutes (seconds are never captured, so there is no equivalent of the hours-format remainder)', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 5, '2026-07-10', '2026-07-11', '00:05')
+            )
+          )
+        ).toBe(false)
+      })
+
+      it('accepts any age strictly greater than the computed value', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 6, '2026-07-10', '2026-07-11', '00:05')
+            )
+          )
+        ).toBe(true)
+      })
+
+      it('rejects an age below the computed value', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 4, '2026-07-10', '2026-07-11', '00:05')
+            )
+          )
+        ).toBe(false)
+      })
+
+      it('rejects every value in the 0-59 range once TOD pushes the computed minutes past the field max', () => {
+        expect(
+          validate(
+            schema,
+            getFieldParams(
+              deceasedForm(ageFieldId, 59, '2026-07-10', '2026-07-11', '08:20')
+            )
+          )
+        ).toBe(false)
+      })
+    })
+  })
+
+  describe('shared guard clause', () => {
+    it('skips validation entirely when the age field is not provided', () => {
+      expect(
+        validate(
+          field('deceased.ageInHours').isValidDeceasedAge(
+            dobField,
+            dodField,
+            todField,
+            'hours'
+          ),
+          getFieldParams({
+            [dobFieldId]: '2026-07-10',
+            [dodFieldId]: '2026-07-11',
+            [todFieldId]: '14:00'
+          })
+        )
+      ).toBe(true)
+    })
+
+    it('skips validation entirely when DOB or DOD is missing or malformed', () => {
+      expect(
+        validate(
+          field('deceased.ageInHours').isValidDeceasedAge(
+            dobField,
+            dodField,
+            todField,
+            'hours'
+          ),
+          getFieldParams({
+            'deceased.ageInHours': 14,
+            [dodFieldId]: '2026-07-11',
+            [todFieldId]: '14:00'
+          })
+        )
+      ).toBe(true)
+    })
+  })
+})
+
 describe('leaf level validations', () => {
   it('validates leaf level fields', () => {
     expect(
