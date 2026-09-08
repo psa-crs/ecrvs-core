@@ -8,7 +8,7 @@
 # Copyright (C) The OpenCRVS Authors located at https://github.com/opencrvs/opencrvs-core/blob/master/AUTHORS.
 services:
   base:
-    image: ghcr.io/psa-crs/ocrvs-base:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-base:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -16,7 +16,7 @@ services:
     deploy:
       replicas: 0
   client:
-    image: ghcr.io/psa-crs/ocrvs-client:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-client:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -29,7 +29,7 @@ services:
       - GATEWAY_URL_INTERNAL=http://gateway:7070
       - LOGIN_URL=http://login:3020
   login:
-    image: ghcr.io/psa-crs/ocrvs-login:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-login:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -41,7 +41,7 @@ services:
       - COUNTRY_CONFIG_URL_INTERNAL=http://countryconfig:3040
 
   gateway:
-    image: ghcr.io/psa-crs/ocrvs-gateway:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-gateway:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -70,7 +70,7 @@ services:
       - MINIO_BUCKET=ocrvs
       - DOCUMENTS_URL=http://documents:9050
   events:
-    image: ghcr.io/psa-crs/ocrvs-events:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-events:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -87,7 +87,7 @@ services:
       - CONFIG_URL=http://config:2021
   # User facing services
   workflow:
-    image: ghcr.io/psa-crs/ocrvs-workflow:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-workflow:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -109,7 +109,7 @@ services:
       - AUTH_URL=http://auth:4040
       - COUNTRY=${COUNTRY:-bgd} # PEN_TEST change to gbr
   search:
-    image: ghcr.io/psa-crs/ocrvs-search:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-search:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -125,7 +125,7 @@ services:
       - FHIR_URL=http://hearth:3447/fhir
       - APPLICATION_CONFIG_URL=http://config:2021/
   metrics:
-    image: ghcr.io/psa-crs/ocrvs-metrics:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-metrics:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -148,7 +148,7 @@ services:
       - FHIR_URL=http://hearth:3447/fhir
   # END User facing services
   scheduler:
-    image: ghcr.io/psa-crs/ocrvs-scheduler:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-scheduler:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -160,7 +160,7 @@ services:
       - METRICS_URL=http://metrics:1050
       - OPENHIM_MONGO_URL=mongodb://mongo1/openhim-dev
   auth:
-    image: ghcr.io/psa-crs/ocrvs-auth:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-auth:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -176,7 +176,7 @@ services:
       - METRICS_URL=http://metrics:1050
       - COUNTRY_CONFIG_URL_INTERNAL=http://countryconfig:3040
   user-mgnt:
-    image: ghcr.io/psa-crs/ocrvs-user-mgnt:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-user-mgnt:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -193,7 +193,7 @@ services:
       - COUNTRY_CONFIG_URL=http://countryconfig:3040
       - DOCUMENTS_URL=http://documents:9050
   webhooks:
-    image: ghcr.io/psa-crs/ocrvs-webhooks:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-webhooks:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -210,7 +210,7 @@ services:
       - CHECK_INVALID_TOKEN=true
       - FHIR_URL=http://hearth:3447/fhir
   notification:
-    image: ghcr.io/psa-crs/ocrvs-notification:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-notification:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -224,7 +224,7 @@ services:
       - COUNTRY_CONFIG_URL=http://countryconfig:3040
       - USER_MANAGEMENT_URL=http://user-mgnt:3030/
   config:
-    image: ghcr.io/psa-crs/ocrvs-config:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-config:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -247,7 +247,7 @@ services:
       - CHECK_INVALID_TOKEN=true
       - HEARTH_MONGO_URL=mongodb://mongo1/hearth-dev
   migration:
-    image: ghcr.io/psa-crs/ocrvs-migration:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-migration:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -269,7 +269,7 @@ services:
       - INFLUX_DB=ocrvs
       - WAIT_HOSTS=mongo1:27017,influxdb:8086,minio:9000,elasticsearch:9200
   documents:
-    image: ghcr.io/psa-crs/ocrvs-documents:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-documents:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .
@@ -281,7 +281,7 @@ services:
       - NODE_ENV=development
       - COUNTRY_CONFIG_URL=http://countryconfig:3040
   data-seeder:
-    image: ghcr.io/psa-crs/ocrvs-data-seeder:release-v1.9.12
+    image: ghcr.io/psa-crs/ocrvs-data-seeder:release-v1.9.16
     #platform: linux/amd64
     build:
       context: .

@@ -1,5 +1,5 @@
 ARG  BRANCH=develop
-FROM ghcr.io/psa-crs/ocrvs-base:release-v1.9.12
+FROM ghcr.io/psa-crs/ocrvs-base:release-v1.9.16
 
 USER node
 WORKDIR /app/packages/auth
