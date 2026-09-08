@@ -10,30 +10,44 @@
  */
 
 import React, { useEffect, useRef } from 'react'
-import { useIntl } from 'react-intl'
+import { defineMessages, useIntl } from 'react-intl'
+import { omit } from 'lodash'
 import {
   EventState,
   EventConfig,
   isPageVisible,
+  isNonInteractiveFieldType,
   PageTypes,
   PageConfig,
-  ValidatorContext
+  ValidatorContext,
+  isNameFieldType,
+  NameField
 } from '@opencrvs/commons/client'
 import { MAIN_CONTENT_ANCHOR_ID } from '@opencrvs/components/lib/Frame/components/SkipToContent'
+import { Button } from '@opencrvs/components/lib/Button'
 import {
   FormFieldGenerator,
   FormFieldGeneratorHandle
 } from '@client/v2-events/components/forms/FormFieldGenerator'
+import { useClearFormModal } from '@client/v2-events/components/ClearFormModal'
+import { useDefaultValue } from '@client/v2-events/hooks/useDefaultValue'
 import { useEventFormData } from '../useEventFormData'
 import { VerificationWizard } from './VerificationWizard'
 import { FormWizard } from './FormWizard'
-import { AvailableActionTypes } from './Action/utils'
+
+const messages = defineMessages({
+  clear: {
+    defaultMessage: 'Clear',
+    description: 'Label for the button clearing all fields on the form page',
+    id: 'buttons.clear'
+  }
+})
 
 interface PagesProps {
   formData: EventState
   setFormData: (form: EventState) => void
   pageId: string
-  showReviewButton?: boolean
+  hideBackToReview?: boolean
   formPages: PageConfig[]
   onPageChange: (nextPageId: string) => void
   onSubmit: () => void
@@ -43,21 +57,13 @@ interface PagesProps {
   isCorrection?: boolean
 }
 
-type DeclarationProps =
-  | {
-      actionType: AvailableActionTypes
-      declaration?: undefined
-    }
-  | {
-      declaration: EventState
-    }
 /**
  *
  * Reusable component for rendering a form with pagination. Used by different action forms
  */
 export function Pages({
   formData,
-  showReviewButton,
+  hideBackToReview = false,
   formPages,
   onPageChange,
   onSubmit,
@@ -65,11 +71,10 @@ export function Pages({
   continueButtonText,
   setFormData,
   eventConfig,
-  declaration,
   // When isCorrection is true, we should disabled fields with 'uncorrectable' set to true, or skip pages where all fields have 'uncorrectable' set to true
   isCorrection = false,
   validatorContext
-}: PagesProps & DeclarationProps) {
+}: PagesProps) {
   const intl = useIntl()
   const visiblePages = formPages.filter((page) =>
     isPageVisible(page, formData, validatorContext)
@@ -80,16 +85,27 @@ export function Pages({
   const formRef = useRef<FormFieldGeneratorHandle>(null)
 
   const { formTouched, setFormTouched } = useEventFormData()
+  const popHiddenFieldValue = useEventFormData(
+    (state) => state.popHiddenFieldValue
+  )
+  const getDefaultValue = useDefaultValue()
+  const { clearFormModal, openClearFormConfirmation } = useClearFormModal()
 
   useEffect(() => {
     // If page changes, scroll to the top of the page using the anchor element ID
     document.getElementById(MAIN_CONTENT_ANCHOR_ID)?.scrollTo({ top: 0 })
   }, [pageId])
 
-  function switchToNextPage() {
-    const nextPageIdx = pageIdx + 1
+  function switchToNextPage(formValues: EventState = formData) {
+    const currentVisiblePages = formPages.filter((p) =>
+      isPageVisible(p, formValues, validatorContext)
+    )
+    const currentPageIdx = currentVisiblePages.findIndex((p) => p.id === pageId)
+    const nextPageIdx = currentPageIdx + 1
     const nextPage =
-      nextPageIdx < visiblePages.length ? visiblePages[nextPageIdx] : undefined
+      nextPageIdx < currentVisiblePages.length
+        ? currentVisiblePages[nextPageIdx]
+        : undefined
 
     // If there is a next page on the form available, navigate to it.
     // Otherwise, submit the form.
@@ -118,10 +134,63 @@ export function Pages({
     }
   }
 
+  async function onClearPage() {
+    const confirmed = await openClearFormConfirmation()
+
+    if (!confirmed) {
+      return
+    }
+
+    const clearedPageValues = Object.fromEntries(
+      page.fields
+        .filter((field) => !isNonInteractiveFieldType(field))
+        .map((field) => [
+          field.id,
+          // Handling name field when performing the clear page action.
+          // eslint-disable-next-line no-nested-ternary
+          (getDefaultValue(field, {}) ??
+          isNameFieldType({ config: field, value: formData[field.id] }))
+            ? (field as NameField).configuration?.name?.middlename
+              ? {
+                  firstname: '',
+                  middlename: '',
+                  surname: ''
+                }
+              : { firstname: '', surname: '' }
+            : null
+        ])
+    )
+
+    setFormData({ ...formData, ...clearedPageValues })
+    setFormTouched(
+      omit(
+        formTouched,
+        page.fields.map((field) => field.id)
+      )
+    )
+    // Purge cached values of conditionally hidden fields on this page so
+    // re-showing them doesn't restore the values that were just cleared
+    page.fields.forEach((field) => popHiddenFieldValue(field.id))
+  }
+
+  const topActionButtons = page.showClearButton
+    ? [
+        <Button
+          key="clear-form"
+          id="clear-form"
+          size="small"
+          type="secondaryNegative"
+          onClick={onClearPage}
+        >
+          {intl.formatMessage(messages.clear)}
+        </Button>
+      ]
+    : undefined
+
   const wizardProps = {
     currentPage: pageIdx,
     pageTitle: intl.formatMessage(page.title),
-    showReviewButton,
+    showReviewButton: !hideBackToReview,
     onNextPage,
     onPreviousPage,
     onSubmit
@@ -132,9 +201,6 @@ export function Pages({
       ref={formRef}
       eventConfig={eventConfig}
       fields={page.fields}
-      // This makes the declaration available in the validations/conditionals of
-      // the form without bleeding into the current form values
-      formContext={declaration}
       formTouched={formTouched}
       formValues={formData}
       id="pagesSection"
@@ -155,8 +221,15 @@ export function Pages({
   }
 
   return (
-    <FormWizard {...wizardProps} continueButtonText={continueButtonText}>
-      {fields}
-    </FormWizard>
+    <>
+      <FormWizard
+        {...wizardProps}
+        continueButtonText={continueButtonText}
+        topActionButtons={topActionButtons}
+      >
+        {fields}
+      </FormWizard>
+      {clearFormModal}
+    </>
   )
 }

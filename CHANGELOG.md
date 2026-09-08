@@ -1,5 +1,102 @@
 # Changelog
 
+## 1.9.16
+
+### New features
+
+- Third-party integrations (such as MOSIP) can now authenticate with their own client ID and secret instead of borrowing the requesting user's session. Integrations are registered on startup from the country configuration, so they keep working across service restarts and the audit trail attributes actions to the integration (e.g. "Registered — MOSIP") rather than to a person. Opt-in: configurations with no integrations are unaffected. [#12360](https://github.com/opencrvs/opencrvs-core/issues/12360)
+
+- Form pages can now show a "Clear" button that resets every field on the page to its default value after a confirmation dialog, and select fields can be cleared without picking another option. Opt in per page with `showClearButton: true`. Country configurations need the `buttons.clear`, `clearForm.title.clearFormConfirm` and `clearForm.desc.clearFormConfirm` translation keys. [#10135](https://github.com/opencrvs/opencrvs-core/issues/10135)
+
+### Improvements
+
+- Hardened the Content Security Policy served by the client and login apps, following a vulnerability scan. The login app no longer allows `unsafe-eval` or wildcard-domain scripts, both apps now send `frame-ancestors`, `base-uri` and `form-action`, `img-src` no longer permits plain-HTTP images, and PDF previews disable pdf.js code generation. The client still requires `unsafe-eval` to compile configuration at runtime; the reasoning is documented next to the policy in `packages/client/nginx.conf`. [#13246](https://github.com/opencrvs/opencrvs-core/issues/13246)
+
+  **Deployment notes:**
+
+  - Images served over plain HTTP are now blocked in both apps. Serve those assets over HTTPS.
+  - `CONTENT_SECURITY_POLICY_WILDCARD` defaults to `*.<domain>`, which trusts every subdomain. It is substituted verbatim, so an explicit space-separated origin list can be used instead; minimum sets are documented in `packages/client/nginx.conf` and `packages/login/nginx.conf`.
+  - Reverse-proxy TLS cipher suites are outside OpenCRVS core. Proxies without explicit TLS options often fall back to a TLS 1.2 list offering CBC suites with HMAC-SHA-1; restricting to AEAD suites satisfies guidance such as ANSSI-BP-035.
+
+### Bug fixes
+
+- Activating a user account now requires the caller to be the account owner. Previously any user holding `user.update` or `user.update[my-jurisdiction]` could set a pending user's password and security answers, allowing account takeover. Enforced in both the gateway and user management. [#13197](https://github.com/opencrvs/opencrvs-core/pull/13197)
+- Changing a password now requires the caller to be the account owner, and the current password is always required. Administrators still reset passwords through "Reset password", which is unchanged.
+- On mobile, uploading a file or signature no longer triggers the PIN re-lock screen. [#13124](https://github.com/opencrvs/opencrvs-core/issues/13124)
+
+## 1.9.15
+
+### Improvements
+
+- Team page now shows a user-friendly "Too many requests" message when the `searchUsers` rate limit (20 req/min) is hit, instead of the generic query error. [#12990](https://github.com/opencrvs/opencrvs-core/issues/12990)
+- Gateway locations endpoint now serves responses from an in-process cache backed by Redis, reducing memory allocations under concurrent load. Cached payloads are gzip-compressed so write buffers to Traefik are proportionally smaller during request spikes. [#12880](https://github.com/opencrvs/opencrvs-core/issues/12880)
+
+## 1.9.14
+
+### New features
+
+- Two new toolkit methods allow country configurations to implement custom client-side logic that goes beyond the predefined `field()` methods. [#11653](https://github.com/opencrvs/opencrvs-core/issues/11653)
+
+  **`field('id').customClientValidator(fn)`** — validate a field with an arbitrary inline function. The function is serialised into the form configuration and executed just-in-time during validation. All logic must be self-contained — external references such as lodash are not available — so the validator stays portable wherever the schema is evaluated.
+
+  ```ts
+  field('nid').customClientValidator((value) => {
+    // LUHN check — all logic must be inline
+    const digits = String(value).split('').reverse().map(Number)
+    let sum = 0
+    digits.forEach((d, i) => {
+      const n = i % 2 === 0 ? d : d * 2
+      sum += n > 9 ? n - 9 : n
+    })
+    return sum % 10 === 0
+  })
+  ```
+
+  The result is a `JSONSchema` and can be used anywhere a conditional validator is accepted (field `validation[]`, page conditionals, etc.).
+
+  **`field('id').customClientEvaluation(fn)`** — compute a derived value from one field and the full form context. Returns a `CodeToEvaluate` descriptor usable as `value`, `defaultValue`, or a `DATA` component entry.
+
+  ```ts
+  field('quantity').customClientEvaluation(
+    (qty, ctx) => Number(qty) * Number(ctx.$form['unitPrice'])
+  )
+  ```
+
+- Always display a "Go to review" button on every page of declaration form to allow easier navigation between the preview and the form fields. [#10132](https://github.com/opencrvs/opencrvs-core/issues/10132)
+
+### Bug fixes
+
+- Signature fields referenced in certificate templates via Handlebars now resolve correctly. Signatures captured during registration and on the review page were previously not rendered in printed certificates even when the template referenced them. [#12277](https://github.com/opencrvs/opencrvs-core/issues/12277)
+
+## 1.9.13
+
+### Breaking changes
+
+- Redundant `defaultValue` removed from BULLET_LIST, FORM_HEADER and PARAGRAPH field types.
+- `action.reject(...)` now by default unassigns the event from the last assigned user. To keep assignment, `keepAssignment: true` option must be explicitly passed when rejecting an action.
+
+### New features
+
+- Action confirmation tokens are now scoped with `record.read` access for the specific event, enabling the confirmation flow to fetch event data via the `event.get` tRPC endpoint. [#12350](https://github.com/opencrvs/opencrvs-core/issues/12350)
+- Within a form page, `defaultValue` resolution is now ordered: each field can reference the resolved values of fields above it, enabling intra-page derived defaults. [#12350](https://github.com/opencrvs/opencrvs-core/issues/12350)
+
+### Bug fixes
+
+- Two mutually exclusive form pages can now share field IDs. Previously a field that appeared on a hidden page was always stripped from the event data, even if an identically-named field on a different visible page had a value. The system now only omits a field when it is hidden on every page it appears on. [#12350](https://github.com/opencrvs/opencrvs-core/issues/12350)
+- Navigating to the next form page now uses the values the user just entered, not the previous render's state. This prevented correct page routing when the next page's visibility depended on a field filled on the current page. [#12350](https://github.com/opencrvs/opencrvs-core/issues/12350)
+- Switching between form pages no longer briefly flashes stale values from the previous page. The Formik instance is now remounted on page change instead of being reset via a `useEffect`. [#12350](https://github.com/opencrvs/opencrvs-core/issues/12350)
+- `CHECKBOX` and `BUTTON` field default values (booleans, numbers) are no longer silently dropped during form initialisation. [#12350](https://github.com/opencrvs/opencrvs-core/issues/12350)
+- The `DATA` field now uses the first visible field config when multiple fields share the same ID, ensuring the correct field is displayed when fields are mutually exclusive. [#12350](https://github.com/opencrvs/opencrvs-core/issues/12350)
+- Address field defaults no longer set `administrativeArea` to an empty string when the user reference cannot be resolved. This prevents empty address submission errors and correctly enables optional address sub-fields. [#12350](https://github.com/opencrvs/opencrvs-core/issues/12350)
+- Health facilities and other non-administrative locations are no longer included in the administrative area hierarchy when resolving location ancestry. [#12485](https://github.com/opencrvs/opencrvs-core/issues/12485)
+- The work queue list now automatically refreshes after a new event is created, without requiring a manual page reload. Previously the sidebar count updated immediately but the list itself stayed stale. [#12103](https://github.com/opencrvs/opencrvs-core/issues/12103)
+
+### Improvements
+
+- The sidebar navigation footer now displays the user's assigned office alongside their name and role. [#11421](https://github.com/opencrvs/opencrvs-core/issues/11421)
+- The client now periodically polls `api/ping` every 5 seconds until all services are reachable, so users automatically recover from offline to online without a page reload. A `ConnectionStatus` indicator in the sidebar reflects real-time connectivity state. [#12055](https://github.com/opencrvs/opencrvs-core/issues/12055)
+- Allow assignment to be controlled when rejecting an action both synchronously and asynchronously by passing an optional `keepAssignment` parameter to response body (during synchronous rejection) or to the `action.reject` function (during asynchronous rejection). [#12347](https://github.com/opencrvs/opencrvs-core/issues/12347)
+
 ## 1.9.12
 
 ### Infrastructure

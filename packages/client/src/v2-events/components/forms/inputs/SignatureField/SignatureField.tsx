@@ -26,6 +26,7 @@ import {
   getFullDocumentPath,
   getUnsignedFileUrl
 } from '@client/v2-events/cache'
+import { setLockBypass } from '@client/utils/lockBypass'
 import { useOnFileChange } from '../FileInput/useOnFileChange'
 import { SignatureCanvasModal } from './components/SignatureCanvasModal'
 
@@ -142,7 +143,11 @@ function SignatureFieldInput({
               <Icon name="Pen" />
               {intl.formatMessage(messages.signatureOpenSignatureInput)}
             </Button>
-            <ImageUploader disabled={disabled} onChange={handleFileChange}>
+            <ImageUploader
+              disabled={disabled}
+              onChange={handleFileChange}
+              onClick={setLockBypass}
+            >
               {intl.formatMessage(buttonMessages.upload)}
             </ImageUploader>
           </Stack>
@@ -205,6 +210,18 @@ function SignatureFieldInput({
   )
 }
 
+function toCertificateVariables(value: FileFieldValue | undefined) {
+  const parsed = FileFieldValue.safeParse(value)
+
+  if (parsed.success) {
+    return new URL(parsed.data.path, window.config.MINIO_BASE_URL).href
+  }
+
+  return ''
+}
+
 export const SignatureField = {
-  Input: SignatureFieldInput
+  Input: SignatureFieldInput,
+  Output: null,
+  toCertificateVariables
 }
