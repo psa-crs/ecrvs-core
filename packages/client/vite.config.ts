@@ -119,7 +119,14 @@ export default defineConfig(({ mode }) => {
       setupFiles: './src/setupTests.ts',
       testTimeout: 60000,
       hookTimeout: 60000,
-      globals: true
+      globals: true,
+      // The app build aliases `crypto` -> `crypto-js` for the browser bundle,
+      // but under vitest (Node) that shadows the real `crypto` module and
+      // breaks `uuid`'s node RNG (`crypto.randomFillSync is not a function`).
+      // Point it back at Node's built-in for tests only.
+      alias: {
+        crypto: 'node:crypto'
+      }
     },
     server: {
       // to get the manifest.json and images from country-config during development time
