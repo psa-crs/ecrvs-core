@@ -24,6 +24,7 @@ import {
   cacheFile,
   getFullDocumentPath,
   getUnsignedFileUrl,
+  isFileCached,
   removeCached
 } from '@client/v2-events/cache'
 import { fetchFileFromUrl } from '@client/utils/imageUtils'
@@ -118,6 +119,15 @@ async function getPresignedUrl(filePath: FullDocumentPath) {
 }
 
 export async function precacheFile(path: FullDocumentPath) {
+  // The drafts query (and anything else that overlays draft state, e.g.
+  // Sidebar/SearchResult) re-runs this for every attachment on every fetch.
+  // Without this check, already-cached files get re-downloaded every time,
+  // and pending requests pile up across refetch cycles until the browser
+  // runs out of resources (net::ERR_INSUFFICIENT_RESOURCES).
+  if (await isFileCached(path)) {
+    return
+  }
+
   const presignedUrl = (await getPresignedUrl(path)).presignedURL
 
   const file = await fetchFileFromUrl(presignedUrl, path)

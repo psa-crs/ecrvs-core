@@ -65,6 +65,27 @@ export async function cacheFile({ url, file }: { url: string; file: File }) {
 }
 
 /**
+ * Checks whether a file is already present in the **BROWSER** cache.
+ * Used to skip redundant presigned-URL + blob fetches for files that
+ * have already been precached (e.g. on repeated draft-list refetches).
+ * @see CACHE_NAME
+ */
+export async function isFileCached(path: FullDocumentPath): Promise<boolean> {
+  const cacheKeys = await caches.keys()
+  const cacheKey = cacheKeys.find((key) => key.startsWith(CACHE_NAME))
+
+  if (!cacheKey) {
+    return false
+  }
+
+  const cache = await caches.open(cacheKey)
+  const match = await cache.match(getUnsignedFileUrl(path), {
+    ignoreSearch: true
+  })
+  return Boolean(match)
+}
+
+/**
  * Removes given file from the **BROWSER** cache.
  * @see CACHE_NAME
  */
