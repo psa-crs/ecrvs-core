@@ -323,6 +323,15 @@ describe('getCurrentEventState()', () => {
           createdByRole: declareRequestAction.createdByRole,
           acceptedAt: declareAcceptAction.createdAt
         },
+        [EventStatus.enum.VALIDATED]: {
+          createdAt: validateAcceptAction.createdAt,
+          createdBy: validateAcceptAction.createdBy,
+          createdByUserType: validateAcceptAction.createdByUserType,
+          createdAtLocation: validateAcceptAction.createdAtLocation,
+          createdBySignature: validateAcceptAction.createdBySignature,
+          createdByRole: validateAcceptAction.createdByRole,
+          acceptedAt: validateAcceptAction.createdAt
+        },
         [EventStatus.enum.REGISTERED]: {
           createdAt: registerRequestAction.createdAt,
           createdBy: registerRequestAction.createdBy,
@@ -442,6 +451,15 @@ describe('getCurrentEventState()', () => {
           createdBySignature: declareAcceptAction.createdBySignature,
           acceptedAt: declareAcceptAction.createdAt,
           createdByRole: declareAcceptAction.createdByRole
+        },
+        [EventStatus.enum.VALIDATED]: {
+          createdAt: validateAcceptAction.createdAt,
+          createdBy: validateAcceptAction.createdBy,
+          createdByUserType: validateAcceptAction.createdByUserType,
+          createdAtLocation: validateAcceptAction.createdAtLocation,
+          createdBySignature: validateAcceptAction.createdBySignature,
+          acceptedAt: validateAcceptAction.createdAt,
+          createdByRole: validateAcceptAction.createdByRole
         },
         [EventStatus.enum.REGISTERED]: {
           createdAt: registerAcceptAction.createdAt,

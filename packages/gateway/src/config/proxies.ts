@@ -13,8 +13,18 @@ import { APPLICATION_CONFIG_URL, AUTH_URL } from '@gateway/constants'
 import fetch from '@gateway/fetch'
 import { rateLimitedRoute } from '@gateway/rate-limit'
 import { api } from '@gateway/v2-events/events/service'
+import {
+  bustLocationsCache,
+  fetchAndCache,
+  getCachedLocations
+} from '@gateway/utils/locations-cache'
+import { logger } from '@opencrvs/commons'
 import z from 'zod'
-import { ServerRoute } from '@hapi/hapi'
+import { promisify } from 'util'
+import { gunzip as _gunzip } from 'zlib'
+import { ServerRoute, ResponseToolkit, Request } from '@hapi/hapi'
+
+const gunzip = promisify(_gunzip)
 
 const LegacyLocationUpdate = z.object({
   name: z.string().optional(),
@@ -33,32 +43,75 @@ const LegacyLocationUpdate = z.object({
     .optional()
 })
 
-export const catchAllProxy = {
-  auth: {
-    method: 'POST',
-    path: '/auth/{suffix}',
-    handler: (_, h) =>
-      h.proxy({
-        uri: AUTH_URL + '/{suffix}'
-      }),
-    options: {
-      auth: false,
-      payload: {
-        output: 'data',
-        parse: false
-      }
+const getLocationsHandler = async (req: Request, h: ResponseToolkit) => {
+  const query = req.url.search
+  const acceptsGzip: boolean =
+    req.headers['accept-encoding']?.includes('gzip') ?? false
+
+  const cacheControl = req.headers['cache-control'] ?? ''
+  const noStore = cacheControl.includes('no-store')
+  const noCache = cacheControl.includes('no-cache')
+
+  if (!query.includes('_count=0') || noStore) {
+    return h.proxy({
+      uri: `${APPLICATION_CONFIG_URL}locations${query}`,
+      passThrough: true
+    })
+  }
+
+  let compressed = noCache ? null : await getCachedLocations(query)
+
+  if (!compressed) {
+    try {
+      compressed = await fetchAndCache(query, async () => {
+        const res = await fetch(`${APPLICATION_CONFIG_URL}locations${query}`)
+        if (!res.ok)
+          throw new Error(`upstream locations returned ${res.status}`)
+        return res.text()
+      })
+    } catch (e) {
+      logger.error(`Locations fetch failed: ${e}`)
+      return h.response({ statusCode: 502, error: 'Bad Gateway' }).code(502)
     }
-  },
+  }
+
+  if (acceptsGzip) {
+    return h
+      .response(compressed)
+      .type('application/json')
+      .header('Content-Encoding', 'gzip')
+      .header('Vary', 'Accept-Encoding')
+  }
+
+  try {
+    const body = await gunzip(compressed)
+    return h
+      .response(body)
+      .type('application/json')
+      .header('Vary', 'Accept-Encoding')
+  } catch (e) {
+    logger.error(`Locations gunzip failed for query=${query}: ${e}`)
+    return h
+      .response({ statusCode: 500, error: 'Internal Server Error' })
+      .code(500)
+  }
+}
+
+export const catchAllProxy = {
   /** @deprecated old naming strategy from Hearth.
    * These are included for backwards compability but `locationS` should be preferred */
   location: {
     method: '*',
     path: '/location',
-    handler: (req, h) =>
-      h.proxy({
+    handler: async (req, h) => {
+      if (req.method === 'get') return getLocationsHandler(req, h)
+
+      void bustLocationsCache()
+      return h.proxy({
         uri: `${APPLICATION_CONFIG_URL}locations${req.url.search}`,
         passThrough: true
-      }),
+      })
+    },
     options: {
       auth: false,
       payload: {
@@ -87,11 +140,7 @@ export const catchAllProxy = {
   getLocations: {
     method: 'GET',
     path: '/locations',
-    handler: (req, h) =>
-      h.proxy({
-        uri: `${APPLICATION_CONFIG_URL}locations${req.url.search}`,
-        passThrough: true
-      }),
+    handler: (req, h) => getLocationsHandler(req, h),
     options: {
       auth: false
     }
@@ -132,6 +181,8 @@ export const catchAllProxy = {
         }
       })
 
+      await bustLocationsCache()
+
       return h.response(response.body).code(response.status)
     },
     options: {
@@ -165,6 +216,8 @@ export const catchAllProxy = {
         }
       })
 
+      await bustLocationsCache()
+
       return h.response({}).code(response.status)
     },
     options: {
@@ -189,6 +242,24 @@ export const catchAllProxy = {
   }
 } satisfies Record<string, ServerRoute>
 
+function proxyToAuth(endpoint: string): ServerRoute {
+  return {
+    method: 'POST',
+    path: `/auth/${endpoint}`,
+    handler: (_, h) =>
+      h.proxy({
+        uri: `${AUTH_URL}/${endpoint}`
+      }),
+    options: {
+      auth: false,
+      payload: {
+        output: 'data',
+        parse: false
+      }
+    }
+  }
+}
+
 export const authProxy = {
   token: {
     method: 'POST',
@@ -204,7 +275,15 @@ export const authProxy = {
         parse: false
       }
     }
-  }
+  },
+  resendAuthenticationCode: proxyToAuth('resendAuthenticationCode'),
+  verifyCode: proxyToAuth('verifyCode'),
+  verifyNumber: proxyToAuth('verifyNumber'),
+  verifySecurityAnswer: proxyToAuth('verifySecurityAnswer'),
+  changePassword: proxyToAuth('changePassword'),
+  sendUserName: proxyToAuth('sendUserName'),
+  refreshToken: proxyToAuth('refreshToken'),
+  invalidateToken: proxyToAuth('invalidateToken')
 } satisfies Record<string, ServerRoute>
 
 export const rateLimitedAuthProxy = {

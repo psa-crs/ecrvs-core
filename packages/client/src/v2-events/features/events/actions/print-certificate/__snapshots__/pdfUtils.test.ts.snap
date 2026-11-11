@@ -26,6 +26,7 @@ exports[`stringifyEventMetadata > Resolves event metadata 1`] = `
   "legalStatuses": {
     "DECLARED": null,
     "REGISTERED": null,
+    "VALIDATED": null,
   },
   "modifiedAt": "2 February 2000",
   "status": "REGISTERED",

@@ -22,7 +22,6 @@ import { showSessionExpireConfirmation } from '@client/notification/actions'
 
 import { IStoreState } from '@client/store'
 import { AnyAction, Store } from 'redux'
-import * as Sentry from '@sentry/react'
 import TimeoutLink from '@client/utils/timeoutLink'
 import * as React from 'react'
 import { CachePersistor } from 'apollo3-cache-persist'
@@ -31,8 +30,6 @@ import {
   persistenceMapper,
   clearOldCacheEntries
 } from '@client/utils/persistence'
-import { storeReloadModalVisibility } from '@client/reload/reducer'
-import { APPLICATION_VERSION } from './constants'
 import { storage } from '../storage'
 
 export let client: ApolloClient<NormalizedCacheObject>
@@ -67,40 +64,15 @@ export const createClient = (
         error.graphQLErrors[0].extensions.code === 'UNAUTHENTICATED')
     ) {
       store.dispatch(showSessionExpireConfirmation())
-    } else {
-      Sentry.captureException(error)
     }
   })
 
-  const responseLink = new ApolloLink((operation, forward) => {
-    return forward(operation).map((response) => {
-      const context = operation.getContext()
-      const {
-        response: { headers }
-      } = context
-
-      const gatewayVersion = headers.get('X-version')
-
-      if (gatewayVersion !== APPLICATION_VERSION) {
-        store.dispatch(storeReloadModalVisibility(true))
-      }
-
-      return response
-    })
-  })
   const timeoutLink = new TimeoutLink() as ApolloLink
   const persistLink = createPersistLink()
   const cache = restoredCache || new InMemoryCache()
 
   client = new ApolloClient({
-    link: from([
-      errorLink,
-      timeoutLink,
-      authLink,
-      persistLink,
-      responseLink,
-      httpLink
-    ]),
+    link: from([errorLink, timeoutLink, authLink, persistLink, httpLink]),
     cache
   })
   return client
@@ -143,7 +115,9 @@ export function useApolloClient(store: Store<IStoreState, AnyAction>) {
 
     // skipping the persistent client in tests for now
     if (import.meta.env.MODE !== 'test') {
-      init()
+      // Version mismatch modal will surface the issue to the user
+      // eslint-disable-next-line no-console
+      init().catch((err) => console.error(err))
     }
   }, [store])
 

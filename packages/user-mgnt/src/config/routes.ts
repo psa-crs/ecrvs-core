@@ -12,6 +12,8 @@ import activateUser, {
   requestSchema as activateUserRequestSchema
 } from '@user-mgnt/features/activateUser/handler'
 import changePasswordHandler, {
+  changeOwnPasswordHandler,
+  changeOwnPasswordRequestSchema,
   changePasswordRequestSchema
 } from '@user-mgnt/features/changePassword/handler'
 import changeAvatarHandler, {
@@ -63,7 +65,10 @@ import {
   systemSecretRequestSchema,
   resSystemSchema,
   SystemSchema,
-  deleteSystem
+  deleteSystem,
+  createIntegrationHandler,
+  createIntegrationRequestSchema,
+  createIntegrationResponseSchema
 } from '@user-mgnt/features/system/handler'
 import verifyUserHandler, {
   requestSchema as reqVerifyUserSchema,
@@ -198,12 +203,12 @@ export const getRoutes = () => {
     {
       method: 'POST',
       path: '/changeUserPassword',
-      handler: changePasswordHandler,
+      handler: changeOwnPasswordHandler,
       options: {
         tags: ['api'],
         description: 'Changes password for logged-in user',
         validate: {
-          payload: changePasswordRequestSchema
+          payload: changeOwnPasswordRequestSchema
         },
         response: {
           schema: false
@@ -474,6 +479,24 @@ export const getRoutes = () => {
         },
         description:
           'Reset password via sms for given userid and make the corresponding user pending'
+      }
+    },
+    {
+      method: 'POST',
+      path: '/createIntegration',
+      handler: createIntegrationHandler,
+      options: {
+        tags: ['api'],
+        description: 'Creates or updates an integration system client',
+        auth: {
+          scope: [SCOPES.INTEGRATION_CREATE]
+        },
+        validate: {
+          payload: createIntegrationRequestSchema
+        },
+        response: {
+          schema: createIntegrationResponseSchema
+        }
       }
     },
     {
