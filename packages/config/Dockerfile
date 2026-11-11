@@ -1,5 +1,5 @@
 ARG  BRANCH=develop
-FROM ghcr.io/psa-crs/ocrvs-base:release-v1.9.12
+FROM ghcr.io/psa-crs/ocrvs-base:release-v1.9.22
 
 USER node
 
@@ -9,4 +9,4 @@ RUN yarn install --frozen-lockfile
 COPY --chown=node:node packages/config /app/packages/config
 RUN yarn build
 
-CMD [ "yarn", "start" ]
+CMD [ "yarn", "start:prod" ]

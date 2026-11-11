@@ -45,7 +45,7 @@ import {
 import { FormFieldGenerator } from '@client/v2-events/components/forms/FormFieldGenerator'
 import { getCountryLogoFile } from '@client/offline/selectors'
 import { withSuspense } from '@client/v2-events/components/withSuspense'
-import { Output } from './Output'
+import { Output, isEmptyValue } from './Output'
 import { DocumentViewer } from './DocumentViewer'
 
 const ValidationError = styled.span`
@@ -348,7 +348,7 @@ function FormReview({
               return { ...field, valueDisplay, errorDisplay }
             })
 
-          // Only display fields that have a non-undefined/null value or have an validation error
+          // Leave out field types that are never shown on review
           const displayedFields = fields.filter(
             ({ type }) =>
               !FieldTypesToHideInReview.some(
@@ -373,8 +373,9 @@ function FormReview({
           const hasMandatoryFields = page.fields.some(
             (field) => !!field.required
           )
-          const hasAnyCompletedField = page.fields.some(
-            (field) => form[field.id] != null && form[field.id] !== ''
+          // Only fields shown on review count towards expanding
+          const hasAnyCompletedField = displayedFields.some(
+            (field) => !isEmptyValue(field, form[field.id])
           )
 
           return (
@@ -537,14 +538,14 @@ function ReviewComponent({
               <ReviewContainter>
                 <FormFieldGenerator
                   fields={reviewFields}
-                  // This makes the declaration form available in the validations/conditionals
-                  // of the annotation form without bleeding into the current annotation values
-                  formContext={form}
                   formTouched={touched}
                   formValues={annotation}
                   id={'review'}
                   readonlyMode={readonlyMode}
-                  validatorContext={validatorContext}
+                  validatorContext={{
+                    ...validatorContext,
+                    baseFormState: form
+                  }}
                   onFormChange={onAnnotationChange}
                   onTouchedChange={setTouched}
                 />

@@ -67,17 +67,20 @@ export async function tokenExchangeHandler(
   if (decodedOrError._tag === 'Left') {
     return oauthResponse.invalidSubjectToken(h)
   }
-  const { sub } = decodedOrError.right
+  const { sub, userType } = decodedOrError.right
 
-  const rejectScopeOfUserAssignedRole = decodedOrError.right.scope.find((s) =>
-    s.startsWith('record.declared.reject')
+  const extraScopes = decodedOrError.right.scope.filter(
+    (s) => s.startsWith('record.declared.reject') || s.startsWith('record.read')
   )
 
   // @TODO: If in the future we have a fine grained access control for records, check here that the subject actually has access to the record requested
   const recordToken = await createTokenForActionConfirmation(
     { eventId, actionId, recordId },
     sub as UUID,
-    rejectScopeOfUserAssignedRole
+    extraScopes,
+    // Carry the subject's user type over so integrations confirming an action
+    // are resolved (and audited) as the system client, not as a user
+    userType
   )
 
   return oauthResponse.success(h, recordToken)
